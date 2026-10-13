@@ -35,25 +35,87 @@ export async function miPerfil(id) {
 export async function catalogo() {
   const filas = revisar(await supabase.from('productos')
     .select(`id, nombre, linea, descripcion,
-      colores:colores!colores_producto_id_fkey(id, nombre, hex, activo),
-      presentaciones:presentaciones!presentaciones_producto_id_fkey(id, medida_ml, unidades, precio, activo)`)
+      colores:colores!colores_producto_id_fkey(id, codigo, nombre, hex, activo),
+      presentaciones:presentaciones!presentaciones_producto_id_fkey(id, medida_ml, unidades, activo)`)
     .eq('activo', true).order('nombre'));
   return filas.map(p => ({
     ...p,
     colores: p.colores.filter(c => c.activo).sort((a, b) => a.nombre.localeCompare(b.nombre)),
-    presentaciones: p.presentaciones.filter(x => x.activo).map(x => ({ ...x, precio: Number(x.precio) }))
+    presentaciones: p.presentaciones.filter(x => x.activo)
       .sort((a, b) => a.medida_ml - b.medida_ml || b.unidades - a.unidades)
-  })).filter(p => p.colores.length && p.presentaciones.length);
+  })).filter(p => p.colores.length);
 }
+const CAMPOS_CLIENTE = 'id, codigo, nombre, zona, lugar, telefono, correo, direccion, documento_tipo, documento, agencia_habitual, condicion_habitual, dias_credito_habitual, notas, limite_credito, vendedor_codigo';
 export async function clientes() {
-  return revisar(await supabase.from('clientes').select('id, nombre, zona, telefono, limite_credito').eq('activo', true).order('nombre'));
+  return revisar(await supabase.from('clientes').select(CAMPOS_CLIENTE).eq('activo', true).order('nombre'));
 }
-export async function crearCliente({ nombre, telefono, vendedorId }) {
-  return revisar(await supabase.from('clientes')
-    .insert({ nombre, telefono: telefono || null, vendedor_id: vendedorId }).select('id, nombre, zona, telefono, limite_credito').single());
+export async function crearCliente({ nombre, telefono }) {
+  return revisar(await supabase.from('clientes').insert({ nombre, telefono: telefono || null }).select(CAMPOS_CLIENTE).single());
+}
+export async function guardarCliente(id, campos) {
+  return revisar(await supabase.from('clientes').update(campos).eq('id', id).select(CAMPOS_CLIENTE).single());
 }
 export async function cambiarLimite(id, limite) {
   revisar(await supabase.from('clientes').update({ limite_credito: limite }).eq('id', id).select('id').single());
+}
+export async function vendedores() {
+  return revisar(await supabase.from('vendedores').select('codigo, nombre, perfil_id, activo').order('nombre'));
+}
+export async function vincularVendedor(perfilId, codigo) {
+  revisar(await supabase.from('vendedores').update({ perfil_id: null }).eq('perfil_id', perfilId).select('codigo'));
+  if (codigo) revisar(await supabase.from('vendedores').update({ perfil_id: perfilId }).eq('codigo', codigo).select('codigo').single());
+}
+
+/* ---------- Precios (por docena, con vigencia) ---------- */
+export async function preciosVigentes(clienteId) {
+  if (!clienteId) return [];                               // desde 0.4.1 no hay precios de lista
+  return revisar(await supabase.rpc('precios_vigentes', { p_cliente: clienteId || null }))
+    .map(p => ({ ...p, precio_docena: Number(p.precio_docena) }));
+}
+export async function historialPrecios(clienteId) {
+  let q = supabase.from('precios').select('id, cliente_id, producto_id, medida_ml, precio_docena, vigente_desde, vigente_hasta, nota, creado, persona:perfiles!precios_registrado_por_fkey(nombre)');
+  q = q.eq('cliente_id', clienteId);
+  return revisar(await q.order('vigente_desde', { ascending: false }).limit(500)).map(p => ({ ...p, precio_docena: Number(p.precio_docena) }));
+}
+export async function fijarPrecio({ cliente, producto, medida, precio, desde, nota }) {
+  return revisar(await supabase.rpc('fijar_precio', { p_cliente: cliente || null, p_producto: producto, p_medida: medida, p_precio: precio, p_desde: desde, p_nota: nota || null }));
+}
+export async function quitarPrecio(id) { revisar(await supabase.rpc('quitar_precio', { p_precio: id })); }
+// Medida nueva de un producto (solo socios)
+export async function crearPresentacion(producto, medida, unidades = 12) {
+  return revisar(await supabase.rpc('crear_presentacion', { p_producto: producto, p_medida: medida, p_unidades: unidades }));
+}
+
+/* ---------- Alertas para socios ---------- */
+const SELECT_ALERTA = `id, tipo, titulo, detalle, cliente_id, producto_id, medida_ml, origen, estado, creado, resuelta_en,
+  cliente:clientes!alertas_cliente_id_fkey(nombre, codigo),
+  producto:productos!alertas_producto_id_fkey(nombre),
+  autor:perfiles!alertas_creado_por_fkey(nombre),
+  resolvio:perfiles!alertas_resuelta_por_fkey(nombre),
+  comentarios:alerta_comentarios!alerta_comentarios_alerta_id_fkey(count)`;
+export async function alertas(estado) {
+  const filas = revisar(await supabase.from('alertas').select(SELECT_ALERTA).eq('estado', estado)
+    .order('creado', { ascending: false }).limit(500));
+  return filas.map(a => ({ ...a, nComentarios: a.comentarios?.[0]?.count || 0 }));
+}
+export async function contarAlertas() {
+  const { count, error } = await supabase.from('alertas').select('id', { count: 'exact', head: true }).eq('estado', 'abierta');
+  if (error) throw new Error(traducir(error));
+  return count || 0;
+}
+export async function comentariosDe(alertaId) {
+  return revisar(await supabase.from('alerta_comentarios').select('id, texto, creado, autor:perfiles!alerta_comentarios_autor_fkey(nombre)')
+    .eq('alerta_id', alertaId).order('creado'));
+}
+export async function comentar(alertaId, texto) {
+  revisar(await supabase.from('alerta_comentarios').insert({ alerta_id: alertaId, texto }).select('id').single());
+}
+export async function crearAlerta({ titulo, detalle, cliente, producto }) {
+  return revisar(await supabase.from('alertas').insert({ tipo: 'aviso', titulo, detalle: detalle || null, cliente_id: cliente || null,
+    producto_id: producto || null }).select('id').single());
+}
+export async function resolverAlerta(id, resuelta, comentario) {
+  revisar(await supabase.rpc('resolver_alerta', { p_alerta: id, p_resuelta: resuelta, p_comentario: comentario || null }));
 }
 
 /* ---------- Pedidos ---------- */

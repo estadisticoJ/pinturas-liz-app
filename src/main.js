@@ -2,13 +2,15 @@ import './estilos.css';
 import { configurado } from './supabase.js';
 import * as D from './datos.js';
 import { S, R, $, esc, rol, esRol, NOMBRE_ROL, marca, toast, pintarShell, renderTodo, renderNav, renderMain, renderHoja,
-  abrirHoja, cerrarHoja, cab, cargarModulo } from './nucleo.js';
-import { recargarPedidos, sincronizarCarrito } from './modulos/pedidos.js';
+  abrirHoja, cerrarHoja, cab, cargarModulo, fijarBusqueda } from './nucleo.js';
+import { recargarPedidos, elegirCliente } from './modulos/pedidos.js';
+import './modulos/clientes.js';
 import './modulos/cobranzas.js';
 import './modulos/produccion.js';
 import './modulos/taller.js';
 import './modulos/almacen.js';
 import './modulos/usuarios.js';
+import { refrescarContador, cargarComentarios } from './modulos/alertas.js';
 
 /* ============ Pantallas fuera de la aplicación ============ */
 const entrada = { modo:'entrar', error:'', aviso:'', enviando:false };
@@ -41,18 +43,26 @@ function pintarEspera(){
 R.hojas.perfil = () => cab(esc(S.perfil.nombre), esc(NOMBRE_ROL[S.perfil.rol] || '')) + `<div class="hoja-body">
   <dl class="dl"><dt>Correo</dt><dd>${esc(S.sesion?.user?.email)}</dd><dt>Perfil</dt><dd>${esc(NOMBRE_ROL[S.perfil.rol])}</dd></dl>
   <p class="muted">Tu perfil define qué módulos ves y qué puedes cambiar. Solo un socio puede modificarlo.</p>
-  ${esRol('socio') ? '<button class="btn" data-a="ir-usuarios">Administrar usuarios</button>' : ''}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">${esRol('socio') ? '<button class="btn" data-a="ir-usuarios">Administrar usuarios</button>' : ''}<button class="btn" data-a="aviso-nuevo">Avisar un error de datos</button></div></div>
   <div class="hoja-pie"><span></span><button class="btn" data-a="salir">Cerrar sesión</button></div>`;
 
 /* ============ Carga y cambios en vivo ============ */
-let pararEscucha = null, tRecarga;
+let pararEscucha = null, tRecarga, cambios = new Set();
 function escuchar(){
   if (pararEscucha) pararEscucha();
-  pararEscucha = D.escuchar(['pedidos','cobros','ordenes_produccion','lotes'], () => {
+  pararEscucha = D.escuchar(['pedidos','cobros','ordenes_produccion','lotes','alertas','alerta_comentarios'], tabla => {
+    cambios.add(tabla);
     clearTimeout(tRecarga);
     tRecarga = setTimeout(async () => {
-      try { await recargarPedidos(); } catch (e) { /* se reintenta en el próximo cambio */ }
-      await cargarModulo(); renderNav(); renderMain(); if (S.hoja?.tipo === 'pedido') renderHoja();
+      const t = cambios; cambios = new Set();
+      const deAlertas = t.has('alertas') || t.has('alerta_comentarios'), deOtros = [...t].some(x => !x.startsWith('alerta'));
+      if (deAlertas) {
+        await refrescarContador();
+        if (S.hoja?.tipo === 'alerta') await cargarComentarios(S.hoja.id);
+      }
+      if (deOtros) { try { await recargarPedidos(); } catch (e) { /* se reintenta en el próximo cambio */ } }
+      if (deOtros || S.modulo === 'alertas') { await cargarModulo(); renderNav(); renderMain(); }
+      if (S.hoja?.tipo === 'pedido') renderHoja();
     }, 600);
   });
 }
@@ -68,11 +78,12 @@ async function cargarTodo(){
   S.form.canal = S.perfil.rol === 'vendedor' ? 'Visita de vendedor' : 'WhatsApp';
   S.cargando = true; pintarShell(); renderTodo();
   try {
-    const [cat, cli] = await Promise.all([D.catalogo(), r.crea || esRol('socio','administrativo') ? D.clientes() : [], recargarPedidos()]);
-    S.catalogo = cat; S.clientes = cli;
-    if (!S.form.cliente || !cli.some(c => c.id === S.form.cliente)) S.form.cliente = cli[0]?.id || 'nuevo';
-    sincronizarCarrito();
-    await cargarModulo();
+    const vende = r.crea || esRol('socio','administrativo');
+    const [cat, cli, vend] = await Promise.all([D.catalogo(), vende ? D.clientes() : [], D.vendedores(), recargarPedidos()]);
+    S.catalogo = cat; S.clientes = cli; S.vendedores = vend;
+    S.miVendedor = vend.find(v => v.perfil_id === S.perfil.id)?.codigo || null;
+    if (vende) await elegirCliente(cli.some(c => c.id === S.form.cliente) ? S.form.cliente : '', { silencio:true });
+    await Promise.all([cargarModulo(), refrescarContador()]);
   } catch (e) { toast(e.message); }
   $('#linea').innerHTML = '<option value="todas">Todas</option>' + [...new Set(S.catalogo.map(p => p.linea))].map(l => `<option>${esc(l)}</option>`).join('');
   S.cargando = false; renderTodo();
@@ -86,6 +97,7 @@ Object.assign(R.acciones, {
   'salir': () => D.salir(),
   'perfil': () => abrirHoja({ tipo:'perfil' }),
   'cerrar': () => cerrarHoja(),
+  'contar-alertas': () => refrescarContador(),
   'mod': async d => {
     S.modulo = d.id; S.hoja = null; renderTodo(); window.scrollTo(0, 0);
     await cargarModulo(); renderTodo();
@@ -93,7 +105,6 @@ Object.assign(R.acciones, {
   'ir-usuarios': async () => { S.modulo = 'usuarios'; S.hoja = null; S.usuarios = []; renderTodo(); await cargarModulo(); renderTodo(); },
   'tab': async d => {
     S.tab[S.modulo] = d.id;
-    if (S.modulo === 'pedidos') $('#buscar').value = S.q[d.id] || '';
     renderTodo();
     if (R.modulos[S.modulo].porTab) { await cargarModulo(); renderTodo(); }
   }
@@ -119,7 +130,14 @@ document.addEventListener('submit', async ev => {
 });
 document.addEventListener('input', ev => {
   const t = ev.target, d = t.dataset || {};
-  if (t.id === 'buscar') { S.q[S.tab.pedidos] = t.value; renderMain(); }
+  if (t.id === 'buscar') { fijarBusqueda(t.value); renderMain(); }
+  else if (t.id === 'buscar-color' || t.id === 'buscar-cliente' || t.id === 'precio-manual') {
+    if (t.id === 'buscar-color') S.sel.q = t.value;
+    else if (t.id === 'precio-manual') { const p = S.catalogo.find(x => x.id === S.sel.prod); S.sel.manual[p.presentaciones[S.sel.pres].id] = t.value; S.error = ''; }
+    else S.g.q = t.value;
+    const pos = t.selectionStart; renderHoja();
+    const n = $('#' + t.id); if (n) { n.focus(); n.setSelectionRange(pos, pos); }
+  }
   else if (d.f) { S.form[d.f] = t.value; if (S.error) S.error = ''; }
   else if (d.g && t.type !== 'checkbox') { S.g[d.g] = t.value; }
   else if (d.gi != null && d.gk) { S.g[d.gl || 'insumos'][+d.gi][d.gk] = t.value; }
@@ -133,7 +151,10 @@ document.addEventListener('change', async ev => {
   else if (d.m) { S.datos.matSel[d.m] = t.value; renderMain(); }
   else if (d.u) {
     const cambio = d.u === 'rol' ? { rol:t.value } : { activo:t.checked };
-    try { await D.cambiarPerfil(d.id, cambio); toast('Perfil actualizado'); }
+    try {
+      if (d.u === 'vendedor') await D.vincularVendedor(d.id, t.value || null); else await D.cambiarPerfil(d.id, cambio);
+      toast('Perfil actualizado');
+    }
     catch (e) { toast(e.message); }
     await cargarModulo(); renderMain();
   }

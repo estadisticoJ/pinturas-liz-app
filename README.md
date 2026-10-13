@@ -4,11 +4,13 @@ Aplicación web instalable (PWA) para celular y computadora, con usuarios y base
 
 | Módulo | Para qué sirve | Quién lo usa |
 | --- | --- | --- |
-| **Pedidos** | Catálogo, carrito, registro del pedido y su avance: Recibido → En taller → Listo → Despachado → Entregado | Ventas, Administración, Taller, Despacho, Socios |
+| **Pedidos** | Se elige el cliente, el catálogo muestra sus precios por docena, carrito, registro del pedido y su avance: Recibido → En taller → Listo → Despachado → Entregado | Ventas, Administración, Taller, Despacho, Socios |
+| **Clientes** | Ficha de cada cliente y sus precios por docena con fecha de vigencia e historial | Administración y Socios editan; Ventas consulta y agrega el primer precio |
 | **Cobranzas** | Saldos por cobrar, cobros con recibo numerado, cuadre del dinero que llega a Administración, límite de crédito por cliente | Ventas, Administración, Socios |
 | **Producción** | Órdenes que llegan del Taller, lotes fabricados, validación del químico y entrega del lote al Taller | Laboratorio, Socios |
 | **Taller** | Qué falta envasar, registro de envasados, órdenes al Laboratorio y materiales que consume cada bolsa | Taller, Despacho, Administración, Socios |
 | **Almacén** | Existencias y movimientos de los cinco almacenes, mínimos y alertas | Cada área ve sus almacenes |
+| **Alertas** (campana) | Datos que faltan o están mal, como avisos con comentarios. Las de precio se cierran solas al registrar el precio | Socios ven y resuelven todas; cada persona puede avisar un error y ve sus avisos |
 | **Usuarios** | Asignar el perfil de cada persona (desde *Mi cuenta*) | Socios |
 
 ---
@@ -70,11 +72,13 @@ Vuelve con todos sus datos en unos minutos. Para no depender de esto, el plan Pr
 | `src/main.js` | Arranque, inicio de sesión y eventos |
 | `src/nucleo.js` | Estado compartido, perfiles y utilidades |
 | `src/datos.js` | Todas las llamadas a Supabase |
-| `src/modulos/` | Un archivo por módulo: `pedidos`, `cobranzas`, `produccion`, `taller`, `almacen`, `usuarios` |
+| `src/modulos/` | Un archivo por módulo: `pedidos`, `clientes`, `cobranzas`, `produccion`, `taller`, `almacen`, `alertas`, `usuarios` |
 | `src/estilos.css` | Estilos |
 | `public/` | Íconos de la aplicación instalable |
 | `supabase/migrations/` | Cambios de base de datos, numerados. Se ejecutan en orden y una sola vez cada uno |
-| `supabase/semillas/` | Datos iniciales: catálogo de ejemplo y primer socio |
+| `supabase/semillas/` | Datos de ejemplo para pruebas y el script del primer socio |
+| `supabase/datos/` | Datos reales: limpieza de pruebas, carga desde tu Excel y observaciones del archivo |
+| `scripts/metadatos_a_sql.py` | Convierte el Excel de metadatos en `supabase/datos/02_carga_metadatos.sql` |
 | `.github/workflows/desplegar.yml` | Publica la app en GitHub Pages al subir cambios a `main` |
 | `.github/workflows/mantener-activo.yml` | Evita que Supabase pause el proyecto |
 
@@ -108,7 +112,7 @@ En la terminal de VS Code (**Terminal > New Terminal**):
 
 ```bash
 git add .
-git commit -m "Versión 0.3.0: cobranzas, producción, taller y almacén"
+git commit -m "Versión 0.4.1: alertas para socios y precio a mano"
 git push
 ```
 
@@ -144,7 +148,10 @@ npm run dev
 
 ## 5. Primeros pasos con los módulos nuevos (v0.3.0)
 
-Para que el Taller y el Almacén calculen bien, carga esto una vez:
+Para probar sin cargar datos reales: ejecuta `supabase/semillas/almacen_ejemplo.sql` en el SQL Editor
+(requiere el catálogo de ejemplo). Para quitarlo después: `supabase/semillas/limpiar_almacen_ejemplo.sql`.
+
+Para que el Taller y el Almacén calculen bien con datos reales, carga esto una vez:
 
 1. **Almacén > Insumos** (Administración o Laboratorio): crea los insumos (pigmentos, espesantes…) con su unidad
    y registra la compra inicial con la cantidad que hay hoy.
@@ -173,7 +180,41 @@ Las cantidades de granel se manejan en **litros**, calculados como bolsas × fra
 
 ---
 
-## 6. Seguridad
+## 6. Precios
+
+- Los precios se guardan **por docena**, por cliente, producto y medida. Un paquete de 6 cuesta la mitad.
+- **No hay precios de lista.** Cada precio es de un cliente.
+- Si el cliente es nuevo o no tiene precio para esa medida, al hacer el pedido la app pide **escribir el precio
+  por docena acordado**. Ese precio queda guardado como precio del cliente para los siguientes pedidos.
+- Quién puede hacer qué:
+
+  | Acción | Socio | Administración | Ventas |
+  | --- | --- | --- | --- |
+  | Escribir el primer precio de un cliente (en el pedido o con *Agregar precio*) | Sí | Sí, con aviso a socios | Sí, con aviso a socios |
+  | Cambiar un precio que ya existe | Sí | Sí | No: avisa a los socios |
+  | Agregar una medida nueva a un producto (por ejemplo, la primera de Pegatransfer) | Sí | No | No |
+
+- Un precio nunca se borra: al cambiarlo se elige desde qué fecha rige, y el anterior queda en el historial
+  hasta el día antes. Se puede programar un alza con fecha futura.
+- El pedido guarda el precio del día en que se registró; cambios posteriores no lo alteran.
+- Los precios del Excel rigen desde el **01/01/2026**. Cuando un cliente tenía dos precios distintos para lo mismo,
+  el de arriba quedó como precio de 2025 (en el historial) y el de abajo como el vigente.
+- Cada vendedor se vincula con su nombre de la lista (Jorge, Lily…) en **Mi cuenta > Administrar usuarios**.
+  Así ve primero sus clientes y los clientes que crea quedan a su nombre.
+
+Desde ahora los clientes y precios se mantienen en la aplicación. El Excel ya no es la fuente: no vuelvas a
+ejecutar la carga, porque duplicaría clientes.
+
+### Alertas (campana de la barra superior)
+
+- La carga del Excel dejó una alerta por cada dato faltante o dudoso: precios en cero, precios repetidos,
+  productos sin precio o sin código y clientes sin teléfono, dirección o documento.
+- La app crea alertas sola cuando alguien que no es socio escribe un precio nuevo o crea un cliente.
+- Cualquier persona puede usar **Avisar un error** (en la campana, en *Mi cuenta* o en la ficha del cliente).
+- En cada alerta se conversa con comentarios. Solo un socio la marca como **resuelta** (o la reabre).
+  Las de *Falta precio* y *Producto sin precio* se resuelven solas al registrar el precio.
+
+## 7. Seguridad
 
 - La clave *publishable* es pública por diseño; lo que protege los datos son las reglas de las migraciones.
 - Nunca pongas la clave **secret** (`sb_secret_...`) en GitHub ni en la aplicación.
@@ -181,9 +222,11 @@ Las cantidades de granel se manejan en **litros**, calculados como bolsas × fra
 
 ---
 
-## 7. Versiones
+## 8. Versiones
 
 | Versión | Migraciones a ejecutar | Cambios |
 | --- | --- | --- |
 | 0.2.0 | 0001, 0002 | Pedidos con usuarios reales, perfiles, catálogo, consolidado y Usuarios |
-| 0.3.0 | **0003** | Cobranzas, Producción, Taller y Almacén. Saldo y cobro en el detalle del pedido. Usuarios pasa a *Mi cuenta*. Flujo que mantiene activo Supabase |
+| 0.3.0 | 0003 | Cobranzas, Producción, Taller y Almacén. Saldo y cobro en el detalle del pedido. Usuarios pasa a *Mi cuenta*. Flujo que mantiene activo Supabase |
+| 0.4.0 | 0004, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` | Datos reales: 302 clientes, 42 productos, 423 colores y 2.079 precios. Precios por docena con vigencia e historial. Módulo Clientes. Vendedores vinculados a usuarios |
+| 0.4.1 | (0004 si no la ejecutaste) **0005**, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` nuevos | Carga desde el Excel corregido: precios repetidos como historial 2025 → 2026, productos nuevos sin código, sin precios en cero. Sin precios de lista: precio escrito a mano para clientes nuevos o sin precio. Solo socios agregan medidas. Alertas con comentarios para socios |

@@ -4,9 +4,9 @@
 /* ============ Perfiles ============
    La base de datos decide qué se permite (RLS y funciones). Esto solo decide qué se muestra. */
 export const ROLES = {
-  socio:          { mod:['pedidos','cobranzas','produccion','taller','almacen'], crea:true,  ve:'todos',    filtro:'todos' },
-  administrativo: { mod:['pedidos','cobranzas','taller','almacen'],              crea:true,  ve:'todos',    filtro:'todos' },
-  vendedor:       { mod:['pedidos','cobranzas'],                                crea:true,  ve:'propios',  filtro:'todos' },
+  socio:          { mod:['pedidos','clientes','cobranzas','produccion','taller','almacen'], crea:true,  ve:'todos',    filtro:'todos' },
+  administrativo: { mod:['pedidos','clientes','cobranzas','taller','almacen'],   crea:true,  ve:'todos',    filtro:'todos' },
+  vendedor:       { mod:['pedidos','clientes','cobranzas'],                     crea:true,  ve:'propios',  filtro:'todos' },
   taller:         { mod:['taller','pedidos','almacen'],                         crea:false, ve:'todos',    filtro:'en_taller' },
   despacho:       { mod:['pedidos','taller','almacen'],                         crea:false, ve:'todos',    filtro:'listo' },
   laboratorio:    { mod:['produccion','almacen'],                               crea:false, ve:'ninguno',  filtro:'todos' }
@@ -18,9 +18,10 @@ export const NOMBRE_ROL = { pendiente:'Sin perfil asignado', socio:'Socio', admi
 export const S = {
   uid:undefined, sesion:null, perfil:null, cargando:true,
   catalogo:[], clientes:[], pedidos:[], usuarios:[], carrito:[],
-  modulo:'pedidos', tab:{}, q:{ catalogo:'', pedidos:'' }, linea:'todas', filtro:'todos',
+  modulo:'pedidos', tab:{}, q:{}, linea:'todas', filtro:'todos',
   hoja:null, error:'', enviando:false, g:{},                 // g: campos del formulario de la hoja abierta
-  datos:{}                                                   // datos cargados por cada módulo
+  datos:{},                                                  // datos cargados por cada módulo
+  alertasN:0                                                 // alertas abiertas (socios: todas; otros: las suyas)
 };
 
 /* ============ Registro de módulos ============ */
@@ -76,6 +77,7 @@ export function pintarShell(){
   $('#app').innerHTML = `
   <header class="top"><div class="wrap top-in">${marca}
     <nav class="nav-top" id="nav-top" aria-label="Módulos"></nav><div class="spacer"></div>
+    <button class="icon-btn" id="btn-alertas" data-a="mod" data-id="alertas" aria-label="Alertas de datos"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 004 0"/></svg><span class="badge num" id="alertas-n" hidden>0</span></button>
     <button class="icon-btn" data-a="perfil" aria-label="Mi cuenta"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span class="lbl" id="perfil-nombre"></span></button>
     <button class="icon-btn" id="btn-carrito" data-a="carrito" aria-label="Abrir carrito"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 4h2l2.4 11h10.2L20 7H6.2"/><circle cx="9" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="badge num" id="carrito-n">0</span></button>
   </div></header>
@@ -96,9 +98,14 @@ export const tabActual = () => {
   return S.tab[S.modulo];
 };
 
+// Texto del buscador de la vista abierta
+export const busqueda = () => S.q[S.modulo + ':' + tabActual()] || '';
+export const fijarBusqueda = v => { S.q[S.modulo + ':' + tabActual()] = v; };
+export const sinAcentos = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 export function renderNav(){
   const r = rol();
-  if (!r.mod.includes(S.modulo) && !(S.modulo === 'usuarios' && esRol('socio'))) S.modulo = r.mod[0];
+  if (!r.mod.includes(S.modulo) && !(S.modulo === 'usuarios' && esRol('socio')) && S.modulo !== 'alertas') S.modulo = r.mod[0];
   const mods = r.mod.map(id => [id, R.modulos[id]]);
   $('#nav-top').innerHTML = mods.map(([id, m]) => `<button data-a="mod" data-id="${id}" ${id === S.modulo ? 'aria-current="page"' : ''}>${m.nombre}</button>`).join('');
   $('#nav-bottom').innerHTML = mods.map(([id, m]) => `<button data-a="mod" data-id="${id}" ${id === S.modulo ? 'aria-current="page"' : ''}>${svgIco(m.ico)}${m.corto || m.nombre}</button>`).join('');
@@ -108,9 +115,12 @@ export function renderNav(){
   $('#subnav').innerHTML = tabs.map(([id, n]) => `<button role="tab" data-a="tab" data-id="${id}" aria-selected="${id === t}">${esc(n)}</button>`).join('');
   const barra = m.barra ? m.barra(t) : null;
   $('#barra').hidden = !barra;
-  if (barra) { $('#linea').hidden = !barra.linea; $('#buscar').placeholder = barra.placeholder; }
+  if (barra) { $('#linea').hidden = !barra.linea; $('#buscar').placeholder = barra.placeholder; if (document.activeElement !== $('#buscar')) $('#buscar').value = busqueda(); }
   $('#btn-carrito').hidden = !r.crea;
   $('#carrito-n').textContent = S.carrito.reduce((t, i) => t + i.cant, 0);
+  $('#alertas-n').hidden = !S.alertasN; $('#alertas-n').textContent = S.alertasN > 99 ? '99+' : S.alertasN;
+  $('#btn-alertas').setAttribute('aria-label', S.alertasN ? `Alertas de datos: ${S.alertasN} abiertas` : 'Alertas de datos');
+  if (S.modulo === 'alertas') $('#btn-alertas').setAttribute('aria-current', 'page'); else $('#btn-alertas').removeAttribute('aria-current');
 }
 export function renderMain(){
   const m = R.modulos[S.modulo];
