@@ -1,4 +1,4 @@
-// Acceso a Supabase. Todas las reglas de quién puede ver o cambiar qué viven en la base (RLS),
+// Acceso a Supabase. Las reglas de quién puede ver o cambiar qué viven en la base (RLS y funciones),
 // así que estas funciones solo piden datos y devuelven errores legibles.
 import { supabase } from './supabase.js';
 
@@ -13,30 +13,20 @@ function traducir(error) {
   if (/User already registered/i.test(m)) return 'Ese correo ya tiene una cuenta. Entra con tu contraseña.';
   if (/Password should be at least/i.test(m)) return 'La contraseña debe tener al menos 6 caracteres.';
   if (/row-level security|permission denied/i.test(m)) return 'Tu perfil no tiene permiso para esta acción.';
+  if (/JSON object requested|0 rows|no rows/i.test(m)) return 'Tu perfil no tiene permiso para esta acción.';
   if (/Failed to fetch|NetworkError/i.test(m)) return 'Sin conexión con el servidor. Revisa tu internet.';
+  if (/articulos_nombre_unico|duplicate key/i.test(m)) return 'Ya existe un registro con ese nombre.';
   return m;
 }
 
 /* ---------- Sesión y perfil ---------- */
-export async function sesionActual() {
-  const { data } = await supabase.auth.getSession();
-  return data.session;
-}
-export function alCambiarSesion(cb) {
-  return supabase.auth.onAuthStateChange((_evento, sesion) => cb(sesion));
-}
-export async function entrar(email, password) {
-  return revisar(await supabase.auth.signInWithPassword({ email, password }));
-}
+export function alCambiarSesion(cb) { return supabase.auth.onAuthStateChange((_e, sesion) => cb(sesion)); }
+export async function entrar(email, password) { return revisar(await supabase.auth.signInWithPassword({ email, password })); }
 export async function registrarse(nombre, email, password) {
-  const r = revisar(await supabase.auth.signUp({
-    email, password, options: { data: { nombre }, emailRedirectTo: location.href.split('#')[0] }
-  }));
+  const r = revisar(await supabase.auth.signUp({ email, password, options: { data: { nombre }, emailRedirectTo: location.href.split('#')[0] } }));
   return { requiereConfirmar: !r.session };
 }
-export async function salir() {
-  await supabase.auth.signOut();
-}
+export async function salir() { await supabase.auth.signOut(); }
 export async function miPerfil(id) {
   return revisar(await supabase.from('perfiles').select('id, nombre, rol, activo').eq('id', id).maybeSingle());
 }
@@ -56,35 +46,37 @@ export async function catalogo() {
   })).filter(p => p.colores.length && p.presentaciones.length);
 }
 export async function clientes() {
-  return revisar(await supabase.from('clientes').select('id, nombre, zona, telefono').eq('activo', true).order('nombre'));
+  return revisar(await supabase.from('clientes').select('id, nombre, zona, telefono, limite_credito').eq('activo', true).order('nombre'));
 }
 export async function crearCliente({ nombre, telefono, vendedorId }) {
   return revisar(await supabase.from('clientes')
-    .insert({ nombre, telefono: telefono || null, vendedor_id: vendedorId }).select('id, nombre, zona, telefono').single());
+    .insert({ nombre, telefono: telefono || null, vendedor_id: vendedorId }).select('id, nombre, zona, telefono, limite_credito').single());
+}
+export async function cambiarLimite(id, limite) {
+  revisar(await supabase.from('clientes').update({ limite_credito: limite }).eq('id', id).select('id').single());
 }
 
 /* ---------- Pedidos ---------- */
 const SELECT_PEDIDO = `id, numero, canal, condicion, dias_credito, entrega, agencia, fecha_entrega, notas, estado, total, creado, creado_por,
   cliente:clientes!pedidos_cliente_id_fkey(nombre, telefono),
   creador:perfiles!pedidos_creado_por_fkey(nombre),
-  items:pedido_items!pedido_items_pedido_id_fkey(bolsas, precio,
+  items:pedido_items!pedido_items_pedido_id_fkey(bolsas, precio, color_id, presentacion_id,
     producto:productos!pedido_items_producto_id_fkey(nombre),
     color:colores!pedido_items_color_id_fkey(nombre, hex),
     presentacion:presentaciones!pedido_items_presentacion_id_fkey(medida_ml, unidades)),
   historial:pedido_historial!pedido_historial_pedido_id_fkey(estado, cuando,
     por:perfiles!pedido_historial_por_fkey(nombre))`;
 
-export const codigo = numero => 'P-' + String(numero).padStart(5, '0');
-
 function normalizar(p) {
   return {
-    id: p.id, numero: p.numero, codigo: codigo(p.numero), creado: p.creado, creadoPor: p.creado_por,
+    id: p.id, numero: p.numero, codigo: 'P-' + String(p.numero).padStart(5, '0'), creado: p.creado, creadoPor: p.creado_por,
     creadoPorNombre: p.creador?.nombre || '—',
     cliente: { nombre: p.cliente?.nombre || '—', telefono: p.cliente?.telefono || '' },
     canal: p.canal, condicion: p.condicion, diasCredito: p.dias_credito, entrega: p.entrega, agencia: p.agencia || '',
     fechaEntrega: p.fecha_entrega, notas: p.notas || '', estado: p.estado, total: Number(p.total),
     items: (p.items || []).map(i => ({
       nombre: i.producto?.nombre || '', color: i.color?.nombre || '', hex: i.color?.hex || '#CCCCCC',
+      color_id: i.color_id, presentacion_id: i.presentacion_id,
       ml: i.presentacion?.medida_ml, und: i.presentacion?.unidades, precio: Number(i.precio), cant: i.bolsas
     })),
     historial: (p.historial || []).sort((a, b) => a.cuando.localeCompare(b.cuando))
@@ -95,23 +87,118 @@ export async function pedidos() {
   const filas = revisar(await supabase.from('pedidos').select(SELECT_PEDIDO).order('creado', { ascending: false }).limit(300));
   return filas.map(normalizar);
 }
-export async function crearPedido(pedido, items) {
-  return revisar(await supabase.rpc('crear_pedido', { pedido, items }));
-}
+export async function crearPedido(pedido, items) { return revisar(await supabase.rpc('crear_pedido', { pedido, items })); }
 export async function cambiarEstado(id, estado) {
   revisar(await supabase.from('pedidos').update({ estado }).eq('id', id).select('id').single());
 }
-export function escucharPedidos(cb) {
-  const canal = supabase.channel('pedidos-en-vivo')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, () => cb())
-    .subscribe();
+export function escuchar(tablas, cb) {
+  let canal = supabase.channel('cambios-en-vivo');
+  tablas.forEach(t => { canal = canal.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => cb(t)); });
+  canal.subscribe();
   return () => supabase.removeChannel(canal);
 }
 
-/* ---------- Usuarios (solo socios) ---------- */
-export async function perfiles() {
-  return revisar(await supabase.from('perfiles').select('id, nombre, rol, activo').order('nombre'));
+/* ---------- Cobranzas ---------- */
+export async function saldos() {
+  const filas = revisar(await supabase.from('saldos_pedidos').select('*').order('vence'));
+  return filas.map(s => ({ ...s, total: Number(s.total), cobrado: Number(s.cobrado), saldo: Number(s.saldo),
+    limite_credito: s.limite_credito == null ? null : Number(s.limite_credito) }));
 }
+const SELECT_COBRO = `id, recibo, monto, medio, fecha, notas, estado, creado, recibido_en, pedido_id, cobrado_por,
+  pedido:pedidos!cobros_pedido_id_fkey(numero, cliente:clientes!pedidos_cliente_id_fkey(nombre)),
+  cobrador:perfiles!cobros_cobrado_por_fkey(nombre), receptor:perfiles!cobros_recibido_por_fkey(nombre)`;
+const normCobro = c => ({ ...c, monto: Number(c.monto) });
+export async function cobros() {
+  return revisar(await supabase.from('cobros').select(SELECT_COBRO).order('creado', { ascending: false }).limit(300)).map(normCobro);
+}
+export async function cobrosDePedido(pedidoId) {
+  return revisar(await supabase.from('cobros').select(SELECT_COBRO).eq('pedido_id', pedidoId).order('creado')).map(normCobro);
+}
+export async function registrarCobro(cobro) {
+  return revisar(await supabase.from('cobros').insert(cobro).select('recibo').single());
+}
+export async function cerrarCobro(id, estado) {
+  revisar(await supabase.from('cobros').update({ estado }).eq('id', id).select('id').single());
+}
+
+/* ---------- Producción ---------- */
+const COLOR = `color:colores!COLFK(nombre, hex, producto:productos!colores_producto_id_fkey(nombre))`;
+export async function ordenes() {
+  return revisar(await supabase.from('ordenes_produccion')
+    .select(`id, numero, color_id, litros, fecha_requerida, notas, estado, creado,
+      ${COLOR.replace('COLFK', 'ordenes_produccion_color_id_fkey')},
+      solicitante:perfiles!ordenes_produccion_solicitada_por_fkey(nombre)`)
+    .order('creado', { ascending: false }).limit(200)).map(o => ({ ...o, litros: Number(o.litros) }));
+}
+export async function crearOrden(orden) { return revisar(await supabase.from('ordenes_produccion').insert(orden).select('numero').single()); }
+export async function cambiarOrden(id, estado) {
+  revisar(await supabase.from('ordenes_produccion').update({ estado }).eq('id', id).select('id').single());
+}
+export async function lotes() {
+  return revisar(await supabase.from('lotes')
+    .select(`id, numero, orden_id, color_id, litros, fecha, estado, viscosidad, transparencia, color_ok, notas, validado_en, entregado_en,
+      ${COLOR.replace('COLFK', 'lotes_color_id_fkey')},
+      orden:ordenes_produccion!lotes_orden_id_fkey(numero),
+      registrador:perfiles!lotes_registrado_por_fkey(nombre), validador:perfiles!lotes_validado_por_fkey(nombre),
+      insumos:lote_insumos!lote_insumos_lote_id_fkey(cantidad, articulo:articulos!lote_insumos_articulo_id_fkey(nombre, unidad))`)
+    .order('creado', { ascending: false }).limit(200)).map(l => ({ ...l, litros: Number(l.litros) }));
+}
+export async function registrarLote(a) {
+  return revisar(await supabase.rpc('registrar_lote', { p_color: a.color, p_litros: a.litros, p_orden: a.orden || null, p_insumos: a.insumos, p_notas: a.notas || '' }));
+}
+export async function validarLote(a) {
+  revisar(await supabase.rpc('validar_lote', { p_lote: a.lote, p_aprobado: a.aprobado, p_viscosidad: a.viscosidad || '',
+    p_transparencia: a.transparencia || '', p_color_ok: a.colorOk, p_notas: a.notas || '' }));
+}
+export async function entregarLote(id) { revisar(await supabase.rpc('entregar_lote', { p_lote: id })); }
+
+/* ---------- Taller ---------- */
+export async function porEnvasar() {
+  return revisar(await supabase.from('por_envasar').select('*').order('producto')).map(f => ({ ...f,
+    bolsas: Number(f.bolsas), envasado_disponible: Number(f.envasado_disponible), faltan_bolsas: Number(f.faltan_bolsas),
+    litros_necesarios: Number(f.litros_necesarios), granel_disponible: Number(f.granel_disponible) }));
+}
+export async function envasados() {
+  return revisar(await supabase.from('envasados')
+    .select(`id, numero, color_id, presentacion_id, bolsas, litros, fecha, notas, creado,
+      ${COLOR.replace('COLFK', 'envasados_color_id_fkey')},
+      presentacion:presentaciones!envasados_presentacion_id_fkey(medida_ml, unidades),
+      lote:lotes!envasados_lote_id_fkey(numero), persona:perfiles!envasados_por_fkey(nombre)`)
+    .order('creado', { ascending: false }).limit(200)).map(e => ({ ...e, litros: Number(e.litros) }));
+}
+export async function registrarEnvasado(a) {
+  return revisar(await supabase.rpc('registrar_envasado', { p_color: a.color, p_presentacion: a.presentacion, p_bolsas: a.bolsas, p_lote: a.lote || null, p_notas: a.notas || '' }));
+}
+export async function materialesPorBolsa() {
+  return revisar(await supabase.from('presentacion_materiales')
+    .select(`presentacion_id, articulo_id, por_bolsa, articulo:articulos!presentacion_materiales_articulo_id_fkey(nombre, unidad)`))
+    .map(m => ({ ...m, por_bolsa: Number(m.por_bolsa) }));
+}
+export async function guardarMaterialPorBolsa(presentacionId, articuloId, porBolsa) {
+  revisar(await supabase.from('presentacion_materiales').upsert({ presentacion_id: presentacionId, articulo_id: articuloId, por_bolsa: porBolsa }));
+}
+export async function quitarMaterialPorBolsa(presentacionId, articuloId) {
+  revisar(await supabase.from('presentacion_materiales').delete().eq('presentacion_id', presentacionId).eq('articulo_id', articuloId));
+}
+
+/* ---------- Almacén ---------- */
+export async function stock(almacenes) {
+  return revisar(await supabase.from('stock').select('*').in('almacen', almacenes).order('nombre'))
+    .map(s => ({ ...s, existencia: Number(s.existencia), minimo: s.minimo == null ? null : Number(s.minimo) }));
+}
+export async function movimientos(almacen) {
+  return revisar(await supabase.from('movimientos')
+    .select(`id, cantidad, motivo, referencia, creado, articulo:articulos!movimientos_articulo_id_fkey(nombre, unidad), persona:perfiles!movimientos_por_fkey(nombre)`)
+    .eq('almacen', almacen).order('creado', { ascending: false }).limit(40)).map(m => ({ ...m, cantidad: Number(m.cantidad) }));
+}
+export async function crearArticulo(a) { return revisar(await supabase.from('articulos').insert(a).select('id').single()); }
+export async function registrarMovimiento(m) { revisar(await supabase.from('movimientos').insert(m)); }
+export async function fijarMinimo(almacen, articuloId, minimo) {
+  revisar(await supabase.from('stock_minimos').upsert({ almacen, articulo_id: articuloId, minimo }));
+}
+
+/* ---------- Usuarios (solo socios) ---------- */
+export async function perfiles() { return revisar(await supabase.from('perfiles').select('id, nombre, rol, activo').order('nombre')); }
 export async function cambiarPerfil(id, cambios) {
   revisar(await supabase.from('perfiles').update(cambios).eq('id', id).select('id').single());
 }

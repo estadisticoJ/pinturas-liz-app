@@ -1,7 +1,7 @@
 {
   "name": "pinturas-liz-app",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Sistema de Pinturas Liz: pedidos, cobranzas, producción y almacén",
   "type": "module",
   "scripts": {

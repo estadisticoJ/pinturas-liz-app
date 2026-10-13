@@ -1,0 +1,19 @@
+name: Mantener Supabase activo
+
+# Supabase pausa los proyectos gratuitos que pasan 7 días sin actividad.
+# Este flujo hace una consulta pequeña a la base cada dos días para que eso no ocurra.
+on:
+  schedule:
+    - cron: '17 13 */2 * *'
+  workflow_dispatch:
+
+jobs:
+  consultar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar la base de datos
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          curl -sS --fail "$URL/rest/v1/productos?select=id&limit=1" -H "apikey: $KEY" -o /dev/null -w "Supabase respondió %{http_code}\n"

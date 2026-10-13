@@ -1,81 +1,189 @@
 # Pinturas Liz · Sistema
 
-Aplicación web instalable (PWA) para móvil y escritorio, con base de datos y usuarios en Supabase.
-Módulo listo: **Pedidos** (catálogo, carrito, registro, seguimiento por estados y consolidado para el Taller).
-Próximos: Cobranzas, Producción y Almacén.
+Aplicación web instalable (PWA) para celular y computadora, con usuarios y base de datos en Supabase.
 
-## Contenido
+| Módulo | Para qué sirve | Quién lo usa |
+| --- | --- | --- |
+| **Pedidos** | Catálogo, carrito, registro del pedido y su avance: Recibido → En taller → Listo → Despachado → Entregado | Ventas, Administración, Taller, Despacho, Socios |
+| **Cobranzas** | Saldos por cobrar, cobros con recibo numerado, cuadre del dinero que llega a Administración, límite de crédito por cliente | Ventas, Administración, Socios |
+| **Producción** | Órdenes que llegan del Taller, lotes fabricados, validación del químico y entrega del lote al Taller | Laboratorio, Socios |
+| **Taller** | Qué falta envasar, registro de envasados, órdenes al Laboratorio y materiales que consume cada bolsa | Taller, Despacho, Administración, Socios |
+| **Almacén** | Existencias y movimientos de los cinco almacenes, mínimos y alertas | Cada área ve sus almacenes |
+| **Usuarios** | Asignar el perfil de cada persona (desde *Mi cuenta*) | Socios |
+
+---
+
+## 1. Cómo funciona el sistema
+
+El sistema tiene tres piezas. Cada una hace una sola cosa:
+
+```
+  Tu computadora (VS Code)          GitHub                          Supabase
+  ────────────────────────          ──────────────────────          ──────────────────────────
+  Editas el código        ──push──▶ Guarda el código
+                                    Actions compila la app
+                                    Pages la publica en ───────────▶ (la app ya publicada habla
+                                    estadisticoj.github.io           directo con Supabase)
+                                                                     · Usuarios y contraseñas
+  Celulares y computadoras ◀──── abren la dirección web ──────────▶ · Base de datos
+  de la empresa                                                      · Reglas de quién ve qué
+                                                                     · Cambios en vivo
+```
+
+- **GitHub guarda el código y publica la aplicación.** Cada vez que subes cambios a la rama `main`,
+  el flujo `desplegar.yml` la compila y la publica en GitHub Pages. Tarda unos 2 minutos.
+  Ver el avance en la pestaña **Actions** del repositorio.
+- **Supabase guarda los datos y controla el acceso.** La aplicación publicada se conecta directo a Supabase
+  con la URL y la clave *publishable* (los secretos de GitHub). Supabase verifica quién entra
+  y aplica las reglas: por ejemplo, un vendedor solo ve sus pedidos, aunque intente ver los demás.
+- **La base de datos no se actualiza sola con GitHub.** Los cambios de tablas y reglas (archivos en
+  `supabase/migrations/`) se ejecutan a mano en el **SQL Editor** de Supabase, una vez cada uno y en orden.
+  Por eso la opción *Deploy to production* de la integración con GitHub debe quedar **apagada**:
+  si estuviera encendida, intentaría ejecutarlos otra vez y fallaría.
+
+### Cómo se mantiene encendido
+
+| Pieza | ¿Se apaga sola? | Qué hacemos |
+| --- | --- | --- |
+| GitHub Pages | No. La página queda publicada siempre | Nada |
+| Supabase (plan gratuito) | Sí: pausa el proyecto si pasa **7 días** con poca actividad. Los datos no se pierden | El flujo `mantener-activo.yml` consulta la base cada dos días. El uso diario de la app también cuenta como actividad |
+| Flujo `mantener-activo.yml` | GitHub desactiva los flujos programados si el repositorio pasa **60 días sin cambios** | Te llegará un correo de GitHub; entra a **Actions** y pulsa *Enable workflow* |
+
+Si un día el proyecto aparece pausado: en Supabase, abre el proyecto y pulsa **Resume project**.
+Vuelve con todos sus datos en unos minutos. Para no depender de esto, el plan Pro de Supabase no se pausa.
+
+### Dónde mirar si algo falla
+
+| Síntoma | Dónde mirar |
+| --- | --- |
+| La página no cambió después de subir código | GitHub > **Actions**: el último flujo debe estar en verde |
+| "Falta conectar Supabase" | GitHub > Settings > Secrets: nombres `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` |
+| "Tu perfil no tiene permiso…" | Supabase > SQL Editor: revisa que todas las migraciones estén ejecutadas |
+| Nadie puede entrar | Supabase > página del proyecto: ¿está pausado? |
+
+---
+
+## 2. Contenido del proyecto
 
 | Carpeta / archivo | Para qué sirve |
 | --- | --- |
-| `src/` | Código de la aplicación (`main.js` pantallas, `datos.js` llamadas a Supabase, `estilos.css`) |
+| `src/main.js` | Arranque, inicio de sesión y eventos |
+| `src/nucleo.js` | Estado compartido, perfiles y utilidades |
+| `src/datos.js` | Todas las llamadas a Supabase |
+| `src/modulos/` | Un archivo por módulo: `pedidos`, `cobranzas`, `produccion`, `taller`, `almacen`, `usuarios` |
+| `src/estilos.css` | Estilos |
 | `public/` | Íconos de la aplicación instalable |
 | `supabase/migrations/` | Cambios de base de datos, numerados. Se ejecutan en orden y una sola vez cada uno |
 | `supabase/semillas/` | Datos iniciales: catálogo de ejemplo y primer socio |
-| `.github/workflows/desplegar.yml` | Publica la aplicación en GitHub Pages cada vez que subes cambios a `main` |
-| `.env.example` | Plantilla de la conexión a Supabase |
+| `.github/workflows/desplegar.yml` | Publica la app en GitHub Pages al subir cambios a `main` |
+| `.github/workflows/mantener-activo.yml` | Evita que Supabase pause el proyecto |
 
-## 1. Preparar Supabase (una vez)
+---
 
-1. Crea un proyecto en [supabase.com](https://supabase.com).
-2. Abre **SQL Editor** y ejecuta, en este orden, el contenido de:
-   1. `supabase/migrations/0001_pedidos.sql`
-   2. `supabase/migrations/0002_ajustes_app.sql`
-   3. `supabase/semillas/catalogo_ejemplo.sql` (opcional: catálogo de prueba, con precios inventados)
-3. En **Project Settings > API** copia la *Project URL* y la clave *anon public*.
+## 3. Cómo actualizar a una versión nueva
 
-Si ya ejecutaste `esquema_pedidos.sql` antes, es el mismo contenido que `0001`: empieza desde `0002`.
+Cada versión llega como un .zip con la carpeta `pinturas-liz-app` completa. Sigue siempre este orden:
+**primero Supabase, después GitHub**, para que la app nueva encuentre las tablas que necesita.
 
-## 2. Probar en tu computadora (VS Code)
+### 3.1 Supabase: ejecutar solo las migraciones nuevas
 
-Necesitas [Node.js](https://nodejs.org) 20 o superior.
+1. Mira la tabla de versiones al final de este archivo: dice qué migraciones trae cada versión.
+2. En Supabase > **SQL Editor** > **New query**, pega el contenido de cada migración nueva, en orden, y pulsa **Run**.
+3. Debe decir *Success. No rows returned*. Si aparece un aviso de operaciones destructivas, revisa que sea
+   la migración correcta y confirma.
+4. Si sale "already exists", esa migración ya estaba ejecutada: no la repitas y sigue con la siguiente.
+
+### 3.2 VS Code: reemplazar los archivos
+
+1. Descomprime el .zip nuevo en una carpeta temporal (por ejemplo, el Escritorio).
+2. Copia **todo el contenido** de la carpeta `pinturas-liz-app` nueva y pégalo dentro de tu carpeta de trabajo
+   (`D:\Proyectos\pinturas-liz-app-v0.2.0\pinturas-liz-app`). Cuando Windows pregunte, elige **Reemplazar los archivos**.
+   - No borres tu carpeta: dentro está la carpeta oculta `.git`, que conecta con GitHub.
+   - El .zip no trae `.env` ni `node_modules`, así que no los toca.
+3. Abre esa carpeta en VS Code. En el panel **Source Control** (ícono de ramas, a la izquierda) verás los archivos cambiados.
+
+### 3.3 GitHub: subir los cambios
+
+En la terminal de VS Code (**Terminal > New Terminal**):
+
+```bash
+git add .
+git commit -m "Versión 0.3.0: cobranzas, producción, taller y almacén"
+git push
+```
+
+O sin terminal: en **Source Control** escribe el mensaje, pulsa **Commit** y luego **Sync Changes**.
+
+### 3.4 Comprobar
+
+1. GitHub > **Actions**: espera a que el flujo *Desplegar en GitHub Pages* quede en verde (unos 2 minutos).
+2. Abre la app y recarga la página. Si sigue viéndose la versión anterior, cierra la pestaña y vuelve a abrirla:
+   la aplicación instalada se actualiza sola en la siguiente apertura.
+
+---
+
+## 4. Instalación desde cero (solo la primera vez)
+
+Ya lo hiciste; queda aquí como referencia.
+
+1. Supabase: crear el proyecto y ejecutar todas las migraciones en orden; opcionalmente `semillas/catalogo_ejemplo.sql`.
+2. GitHub: subir el proyecto, crear los secretos `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
+   (la clave *publishable*, `sb_publishable_...`) y elegir **GitHub Actions** en Settings > Pages.
+3. Supabase > Authentication > URL Configuration: *Site URL* y *Redirect URLs* con la dirección de la app.
+4. Crear tu cuenta en la app y ejecutar `semillas/primer_socio.sql` con tu correo.
+
+Para probar en tu computadora antes de subir (opcional, requiere [Node.js](https://nodejs.org) 20+):
 
 ```bash
 npm install
-cp .env.example .env      # en Windows: copy .env.example .env
-# edita .env con la URL y la clave anon de tu proyecto
+copy .env.example .env    # y completa la URL y la clave
 npm run dev
 ```
 
-Abre la dirección que muestra la terminal (normalmente `http://localhost:5173`).
+---
 
-## 3. Crear el primer socio
+## 5. Primeros pasos con los módulos nuevos (v0.3.0)
 
-1. En la aplicación, pestaña **Crear cuenta**, regístrate con tu correo y confirma el correo que te llega.
-2. En el SQL Editor ejecuta `supabase/semillas/primer_socio.sql`, cambiando el correo por el tuyo.
-3. Entra de nuevo: ya verás el módulo **Usuarios**, donde asignas el perfil de cada persona que cree su cuenta.
+Para que el Taller y el Almacén calculen bien, carga esto una vez:
 
-Perfiles: Socio, Administrativo, Vendedor, Encargado de pedidos (Taller), Despacho y Laboratorio.
-Quien crea una cuenta queda **sin perfil** y no ve nada hasta que un socio se lo asigne.
+1. **Almacén > Insumos** (Administración o Laboratorio): crea los insumos (pigmentos, espesantes…) con su unidad
+   y registra la compra inicial con la cantidad que hay hoy.
+2. **Almacén > Materiales** (Administración o Taller): crea frascos de cada medida, tapas, etiquetas y bolsas,
+   y registra lo que hay hoy.
+3. **Taller > Materiales por bolsa**: para cada presentación, indica cuántos frascos, tapas, etiquetas y bolsas
+   consume una bolsa (por ejemplo, 30 ml × 12: 12 frascos, 12 tapas, 12 etiquetas y 1 bolsa).
+4. **Almacén > Granel Taller y Producto envasado**: si hoy ya hay baldes o bolsas, usa *Ajustar por conteo*
+   para registrar lo que existe.
 
-## 4. Publicar con GitHub
+Cómo se mueven solos los almacenes:
 
-1. Crea un repositorio en GitHub y sube el proyecto desde VS Code (*Source Control > Publish to GitHub*).
-2. En el repositorio: **Settings > Secrets and variables > Actions > New repository secret**, crea:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-3. En **Settings > Pages**, en *Source* elige **GitHub Actions**.
-4. Sube cualquier cambio a `main` (o ejecuta el flujo desde la pestaña **Actions**). Al terminar, la dirección
-   aparece en **Settings > Pages**, por ejemplo `https://tu-usuario.github.io/pinturas-liz-app/`.
-5. En Supabase, **Authentication > URL Configuration**: pon esa dirección como *Site URL* y agrégala en
-   *Redirect URLs*, para que los correos de confirmación lleven a la aplicación publicada.
+| Acción | Efecto en el almacén |
+| --- | --- |
+| El Laboratorio registra un lote | Salen los insumos usados |
+| El químico aprueba el lote | Entra a **Granel Laboratorio** (la reserva) |
+| El Laboratorio entrega el lote | Pasa de **Granel Laboratorio** a **Granel Taller** y la orden queda atendida |
+| El Taller registra un envasado | Sale granel y materiales, entra **Producto envasado** |
+| Un pedido pasa a **Listo** | Sus bolsas salen de **Producto envasado** |
+| Administración confirma un cobro | Deja de figurar como dinero por entregar |
 
-Para instalarla en el celular: abre la dirección en Chrome (Android) o Safari (iPhone) y elige
-*Agregar a pantalla de inicio*.
+Si el Taller marca pedidos como listos sin haber registrado los envasados, el producto envasado quedará en
+negativo. Es una señal para registrar los envasados o ajustar por conteo, no un error del sistema.
 
-## Seguridad
+Las cantidades de granel se manejan en **litros**, calculados como bolsas × frascos × ml.
 
-- La clave *anon* es pública por diseño; lo que protege los datos son las reglas RLS de las migraciones.
-- Quién ve qué pedidos y quién puede pasar un pedido de un estado a otro lo decide la base de datos,
-  no la pantalla. Por ejemplo, un vendedor solo ve sus pedidos y solo el Taller (o un socio) puede marcarlos como listos.
-- Nunca subas el archivo `.env` ni la clave *service_role* al repositorio.
+---
 
-## Cómo se entregan los cambios
+## 6. Seguridad
 
-Cada refinamiento trae:
-- el código actualizado de la aplicación (reemplaza los archivos y sube a GitHub), y
-- una migración nueva en `supabase/migrations/` con el siguiente número. Ejecuta solo las que aún no ejecutaste.
+- La clave *publishable* es pública por diseño; lo que protege los datos son las reglas de las migraciones.
+- Nunca pongas la clave **secret** (`sb_secret_...`) en GitHub ni en la aplicación.
+- Los movimientos de almacén y los cobros no se borran: se corrigen con un ajuste o se anulan, y queda registrado quién lo hizo.
 
-| Versión | Migraciones | Cambios |
+---
+
+## 7. Versiones
+
+| Versión | Migraciones a ejecutar | Cambios |
 | --- | --- | --- |
-| 0.2.0 | 0001, 0002 | Pedidos con usuarios reales, perfiles, catálogo, consolidado y módulo Usuarios |
+| 0.2.0 | 0001, 0002 | Pedidos con usuarios reales, perfiles, catálogo, consolidado y Usuarios |
+| 0.3.0 | **0003** | Cobranzas, Producción, Taller y Almacén. Saldo y cobro en el detalle del pedido. Usuarios pasa a *Mi cuenta*. Flujo que mantiene activo Supabase |
