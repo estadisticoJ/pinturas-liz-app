@@ -81,6 +81,25 @@ export async function fijarPrecio({ cliente, producto, medida, precio, desde, no
   return revisar(await supabase.rpc('fijar_precio', { p_cliente: cliente || null, p_producto: producto, p_medida: medida, p_precio: precio, p_desde: desde, p_nota: nota || null }));
 }
 export async function quitarPrecio(id) { revisar(await supabase.rpc('quitar_precio', { p_precio: id })); }
+// Precio común (el que más clientes pagan), máximo y mínimo por producto y medida, y medida habitual por producto
+export async function referenciasPrecio() {
+  const [ref, hab] = await Promise.all([supabase.rpc('precios_referencia'), supabase.rpc('medidas_habituales')]);
+  const r = revisar(ref), h = revisar(hab);
+  return {
+    precios: Object.fromEntries(r.map(x => [x.producto_id + '|' + x.medida_ml, { comun: Number(x.comun), maximo: Number(x.maximo), minimo: Number(x.minimo), clientes: x.clientes }])),
+    habitual: Object.fromEntries(h.map(x => [x.producto_id, x.medida_ml]))
+  };
+}
+// Novedades para socios y Administración: clientes nuevos y precios registrados o cambiados desde la app
+export async function novedades() {
+  return revisar(await supabase.from('novedades').select('id, tipo, titulo, detalle, cliente_id, creado, por, persona:perfiles!novedades_por_fkey(nombre)')
+    .order('creado', { ascending: false }).limit(300));
+}
+export async function contarNovedades(desde, yo) {
+  const { count, error } = await supabase.from('novedades').select('id', { count: 'exact', head: true }).gt('creado', desde).neq('por', yo);
+  if (error) throw new Error(traducir(error));
+  return count || 0;
+}
 // Medida nueva de un producto (solo socios)
 export async function crearPresentacion(producto, medida, unidades = 12) {
   return revisar(await supabase.rpc('crear_presentacion', { p_producto: producto, p_medida: medida, p_unidades: unidades }));

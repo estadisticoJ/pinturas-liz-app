@@ -1,9 +1,10 @@
 import './estilos.css';
+import { registerSW } from 'virtual:pwa-register';
 import { configurado } from './supabase.js';
 import * as D from './datos.js';
 import { S, R, $, esc, rol, esRol, NOMBRE_ROL, marca, toast, pintarShell, renderTodo, renderNav, renderMain, renderHoja,
-  abrirHoja, cerrarHoja, cab, cargarModulo, fijarBusqueda } from './nucleo.js';
-import { recargarPedidos, elegirCliente } from './modulos/pedidos.js';
+  abrirHoja, cerrarHoja, cab, cargarModulo, fijarBusqueda, refrescarVivo } from './nucleo.js';
+import { recargarPedidos, elegirCliente, cargarReferencias, fijarManual } from './modulos/pedidos.js';
 import './modulos/clientes.js';
 import './modulos/cobranzas.js';
 import './modulos/produccion.js';
@@ -32,6 +33,7 @@ function pintarEntrada(){
       <button class="btn btn-p" ${e.enviando ? 'disabled' : ''}>${e.enviando ? 'Un momento…' : nuevo ? 'Crear cuenta' : 'Entrar'}</button>
     </form>
     ${nuevo ? '<p class="muted" style="font-size:13px">Al crear tu cuenta, un socio debe asignarte un perfil antes de que puedas usar el sistema.</p>' : ''}
+    <p class="muted" style="font-size:12px;text-align:center">Versión ${__VERSION__}</p>
   </div></div>`;
 }
 function pintarEspera(){
@@ -43,6 +45,7 @@ function pintarEspera(){
 R.hojas.perfil = () => cab(esc(S.perfil.nombre), esc(NOMBRE_ROL[S.perfil.rol] || '')) + `<div class="hoja-body">
   <dl class="dl"><dt>Correo</dt><dd>${esc(S.sesion?.user?.email)}</dd><dt>Perfil</dt><dd>${esc(NOMBRE_ROL[S.perfil.rol])}</dd></dl>
   <p class="muted">Tu perfil define qué módulos ves y qué puedes cambiar. Solo un socio puede modificarlo.</p>
+  <p class="muted">Versión de la aplicación: <strong>${__VERSION__}</strong></p>
   <div style="display:flex;gap:8px;flex-wrap:wrap">${esRol('socio') ? '<button class="btn" data-a="ir-usuarios">Administrar usuarios</button>' : ''}<button class="btn" data-a="aviso-nuevo">Avisar un error de datos</button></div></div>
   <div class="hoja-pie"><span></span><button class="btn" data-a="salir">Cerrar sesión</button></div>`;
 
@@ -50,12 +53,14 @@ R.hojas.perfil = () => cab(esc(S.perfil.nombre), esc(NOMBRE_ROL[S.perfil.rol] ||
 let pararEscucha = null, tRecarga, cambios = new Set();
 function escuchar(){
   if (pararEscucha) pararEscucha();
-  pararEscucha = D.escuchar(['pedidos','cobros','ordenes_produccion','lotes','alertas','alerta_comentarios'], tabla => {
+  const tablas = ['pedidos','cobros','ordenes_produccion','lotes','alertas','alerta_comentarios'];
+  if (esRol('socio','administrativo')) tablas.push('novedades');
+  pararEscucha = D.escuchar(tablas, tabla => {
     cambios.add(tabla);
     clearTimeout(tRecarga);
     tRecarga = setTimeout(async () => {
       const t = cambios; cambios = new Set();
-      const deAlertas = t.has('alertas') || t.has('alerta_comentarios'), deOtros = [...t].some(x => !x.startsWith('alerta'));
+      const deAlertas = t.has('alertas') || t.has('alerta_comentarios') || t.has('novedades'), deOtros = [...t].some(x => !x.startsWith('alerta') && x !== 'novedades');
       if (deAlertas) {
         await refrescarContador();
         if (S.hoja?.tipo === 'alerta') await cargarComentarios(S.hoja.id);
@@ -79,7 +84,7 @@ async function cargarTodo(){
   S.cargando = true; pintarShell(); renderTodo();
   try {
     const vende = r.crea || esRol('socio','administrativo');
-    const [cat, cli, vend] = await Promise.all([D.catalogo(), vende ? D.clientes() : [], D.vendedores(), recargarPedidos()]);
+    const [cat, cli, vend] = await Promise.all([D.catalogo(), vende ? D.clientes() : [], D.vendedores(), recargarPedidos(), vende ? cargarReferencias() : null]);
     S.catalogo = cat; S.clientes = cli; S.vendedores = vend;
     S.miVendedor = vend.find(v => v.perfil_id === S.perfil.id)?.codigo || null;
     if (vende) await elegirCliente(cli.some(c => c.id === S.form.cliente) ? S.form.cliente : '', { silencio:true });
@@ -131,10 +136,9 @@ document.addEventListener('submit', async ev => {
 document.addEventListener('input', ev => {
   const t = ev.target, d = t.dataset || {};
   if (t.id === 'buscar') { fijarBusqueda(t.value); renderMain(); }
-  else if (t.id === 'buscar-color' || t.id === 'buscar-cliente' || t.id === 'precio-manual') {
-    if (t.id === 'buscar-color') S.sel.q = t.value;
-    else if (t.id === 'precio-manual') { const p = S.catalogo.find(x => x.id === S.sel.prod); S.sel.manual[p.presentaciones[S.sel.pres].id] = t.value; S.error = ''; }
-    else S.g.q = t.value;
+  else if (d.pm) { fijarManual(d.pm, t.value); refrescarVivo(); }
+  else if (t.id === 'buscar-color' || t.id === 'buscar-cliente') {
+    if (t.id === 'buscar-color') S.sel.q = t.value; else S.g.q = t.value;
     const pos = t.selectionStart; renderHoja();
     const n = $('#' + t.id); if (n) { n.focus(); n.setSelectionRange(pos, pos); }
   }
@@ -160,6 +164,20 @@ document.addEventListener('change', async ev => {
   }
 });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && S.hoja) cerrarHoja(); });
+
+/* ============ Actualización automática ============
+   Al publicar una versión nueva en GitHub, cada celular o computadora la instala sola:
+   se revisa al abrir la app, al volver a ella y cada 30 minutos; al instalarla, la página se recarga
+   (el carrito queda guardado). */
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, reg){
+    if (!reg) return;
+    const revisar = () => { if (navigator.onLine) reg.update().catch(() => {}); };
+    setInterval(revisar, 30 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') revisar(); });
+  }
+});
 
 /* ============ Arranque ============ */
 if (!configurado) pintarSinConfig();

@@ -21,7 +21,8 @@ export const S = {
   modulo:'pedidos', tab:{}, q:{}, linea:'todas', filtro:'todos',
   hoja:null, error:'', enviando:false, g:{},                 // g: campos del formulario de la hoja abierta
   datos:{},                                                  // datos cargados por cada módulo
-  alertasN:0                                                 // alertas abiertas (socios: todas; otros: las suyas)
+  alertasN:0,                                                // alertas abiertas (socios: todas; otros: las suyas)
+  novedadesN:0                                               // novedades no vistas (socios y Administración)
 };
 
 /* ============ Registro de módulos ============ */
@@ -70,14 +71,14 @@ let tToast;
 export function toast(t){ const el = $('#toast'); if (!el) return; el.textContent = t; el.hidden = false; clearTimeout(tToast); tToast = setTimeout(() => { el.hidden = true; }, 3800); }
 
 /* ============ Dibujo general ============ */
-const marca = '<div class="brand"><span class="gotas" aria-hidden="true"><i style="background:#F6C900"></i><i style="background:#FF62A6"></i><i style="background:#69BFE8"></i></span>Pinturas Liz</div>';
+const marca = '<div class="brand"><img class="logo" src="./logo.png" alt="Logo de Pinturas Liz" width="54" height="40"><span class="nombre-marca">Pinturas Liz</span></div>';
 export { marca };
 
 export function pintarShell(){
   $('#app').innerHTML = `
   <header class="top"><div class="wrap top-in">${marca}
     <nav class="nav-top" id="nav-top" aria-label="Módulos"></nav><div class="spacer"></div>
-    <button class="icon-btn" id="btn-alertas" data-a="mod" data-id="alertas" aria-label="Alertas de datos"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 004 0"/></svg><span class="badge num" id="alertas-n" hidden>0</span></button>
+    <button class="icon-btn" id="btn-alertas" data-a="mod" data-id="alertas" aria-label="Alertas y novedades"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 004 0"/></svg><span class="badge num" id="alertas-n" hidden>0</span></button>
     <button class="icon-btn" data-a="perfil" aria-label="Mi cuenta"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span class="lbl" id="perfil-nombre"></span></button>
     <button class="icon-btn" id="btn-carrito" data-a="carrito" aria-label="Abrir carrito"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 4h2l2.4 11h10.2L20 7H6.2"/><circle cx="9" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="badge num" id="carrito-n">0</span></button>
   </div></header>
@@ -118,8 +119,9 @@ export function renderNav(){
   if (barra) { $('#linea').hidden = !barra.linea; $('#buscar').placeholder = barra.placeholder; if (document.activeElement !== $('#buscar')) $('#buscar').value = busqueda(); }
   $('#btn-carrito').hidden = !r.crea;
   $('#carrito-n').textContent = S.carrito.reduce((t, i) => t + i.cant, 0);
-  $('#alertas-n').hidden = !S.alertasN; $('#alertas-n').textContent = S.alertasN > 99 ? '99+' : S.alertasN;
-  $('#btn-alertas').setAttribute('aria-label', S.alertasN ? `Alertas de datos: ${S.alertasN} abiertas` : 'Alertas de datos');
+  const nAv = S.alertasN + S.novedadesN;
+  $('#alertas-n').hidden = !nAv; $('#alertas-n').textContent = nAv > 99 ? '99+' : nAv;
+  $('#btn-alertas').setAttribute('aria-label', `Alertas y novedades${S.alertasN ? ` · ${S.alertasN} alertas abiertas` : ''}${S.novedadesN ? ` · ${S.novedadesN} novedades` : ''}`);
   if (S.modulo === 'alertas') $('#btn-alertas').setAttribute('aria-current', 'page'); else $('#btn-alertas').removeAttribute('aria-current');
 }
 export function renderMain(){
@@ -131,9 +133,18 @@ export function renderHoja(){
   const h = $('#hoja'), abierta = !!S.hoja;
   h.hidden = !abierta; $('#velo').hidden = !abierta;
   if (!abierta) { h.innerHTML = ''; return; }
-  const cuerpo = h.querySelector('.hoja-body'), y = cuerpo ? cuerpo.scrollTop : 0;
+  // Se conserva la posición solo si sigue abierta la misma hoja (al pasar a otra, empieza arriba)
+  const cuerpo = h.querySelector('.hoja-body'), y = cuerpo && h.dataset.tipo === S.hoja.tipo ? cuerpo.scrollTop : 0;
+  h.dataset.tipo = S.hoja.tipo;
   h.innerHTML = R.hojas[S.hoja.tipo]();
   const nuevo = h.querySelector('.hoja-body'); if (nuevo) nuevo.scrollTop = y;
+}
+// Actualiza solo las partes marcadas con data-vivo de la hoja abierta (totales, precios), sin tocar el
+// campo en el que se está escribiendo: así no se pierde el foco ni se cierra el teclado del celular.
+export function refrescarVivo(){
+  const h = $('#hoja'); if (!S.hoja || h.hidden) return;
+  const t = document.createElement('div'); t.innerHTML = R.hojas[S.hoja.tipo]();
+  h.querySelectorAll('[data-vivo]').forEach(el => { const n = t.querySelector(`[data-vivo="${el.dataset.vivo}"]`); if (n) el.replaceWith(n); });
 }
 export function renderTodo(){ renderNav(); renderMain(); renderHoja(); }
 export function abrirHoja(h, g = {}){ S.hoja = h; S.g = g; S.error = ''; S.enviando = false; renderHoja(); const x = $('#hoja .x'); if (x) x.focus(); }

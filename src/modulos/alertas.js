@@ -4,7 +4,7 @@
 // Se abre con la campana de la barra superior.
 import * as D from '../datos.js';
 import { S, R, esc, horaCorta, fechaCorta, esRol, vacio, op, campo, toast, renderTodo, renderNav, renderMain, renderHoja,
-  abrirHoja, cab, errorHoja, botonEnviar, busqueda, sinAcentos } from '../nucleo.js';
+  abrirHoja, cab, errorHoja, botonEnviar, busqueda, sinAcentos, guarda, lee } from '../nucleo.js';
 import { abrirCliente } from './clientes.js';
 
 export const TIPOS = {
@@ -21,24 +21,45 @@ export const TIPOS = {
 const nombreTipo = t => TIPOS[t] || t;
 const origen = a => a.origen === 'carga' ? 'Carga del Excel' : a.autor?.nombre || 'Sistema';
 
+// Novedades (clientes nuevos y precios registrados por otros): solo socios y Administración. Se cuentan las no vistas.
+const veNovedades = () => esRol('socio','administrativo');
+const claveVisto = () => 'pl_novedades_visto_' + S.perfil?.id;
+const vistoDesde = () => lee(claveVisto(), new Date(Date.now() - 7 * 864e5).toISOString());
+const NOMBRE_NOVEDAD = { cliente_nuevo:'Cliente nuevo', precio_nuevo:'Precio nuevo', precio_cambio:'Cambio de precio' };
+
 export async function refrescarContador(){
-  try { S.alertasN = await D.contarAlertas(); } catch (e) { /* sin conexión: se intenta luego */ }
+  try {
+    const [a, n] = await Promise.all([D.contarAlertas(), veNovedades() ? D.contarNovedades(vistoDesde(), S.perfil.id) : 0]);
+    S.alertasN = a; S.novedadesN = n;
+  } catch (e) { /* sin conexión: se intenta luego */ }
   renderNav();
 }
 
 R.modulos.alertas = {
   nombre:'Alertas', oculto:true,
   ico:'<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 004 0"/>',
-  tabs: () => [['abiertas', 'Abiertas · ' + S.alertasN], ['resueltas', 'Resueltas']],
+  tabs(){
+    const nov = ['novedades', 'Novedades' + (S.novedadesN ? ' · ' + S.novedadesN : '')];
+    if (esRol('socio')) return [['abiertas', 'Alertas · ' + S.alertasN], nov, ['resueltas', 'Resueltas']];
+    if (veNovedades()) return [nov, ['abiertas', 'Mis avisos'], ['resueltas', 'Resueltas']];
+    return [['abiertas', 'Mis avisos'], ['resueltas', 'Resueltas']];
+  },
   barra: () => ({ linea:false, placeholder:'Buscar por cliente, producto o texto' }),
   porTab: true,
   async cargar(tab){
-    const d = S.datos.alertas || (S.datos.alertas = { tipo:'todos' });
+    const d = S.datos.alertas || (S.datos.alertas = { tipo:'todos', novTipo:'todos' });
+    if (tab === 'novedades') {
+      d.novedades = await D.novedades();
+      d.visto = vistoDesde();                                    // las posteriores se marcan como nuevas
+      guarda(claveVisto(), new Date().toISOString()); S.novedadesN = 0;
+      return;
+    }
     d.lista = null;
     d.lista = await D.alertas(tab === 'resueltas' ? 'resuelta' : 'abierta');
     if (tab !== 'resueltas') S.alertasN = d.lista.length;
   },
   vista(tab){
+    if (tab === 'novedades') return vistaNovedades();
     const d = S.datos.alertas; if (!d?.lista) return '<p class="cargando">Cargando alertas…</p>';
     const q = sinAcentos(busqueda().trim());
     const conteo = new Map(); d.lista.forEach(a => conteo.set(a.tipo, (conteo.get(a.tipo) || 0) + 1));
@@ -61,6 +82,26 @@ R.modulos.alertas = {
     </div>`;
   }
 };
+
+function vistaNovedades(){
+  const d = S.datos.alertas; if (!d?.novedades) return '<p class="cargando">Cargando novedades…</p>';
+  const q = sinAcentos(busqueda().trim());
+  const conteo = new Map(); d.novedades.forEach(n => conteo.set(n.tipo, (conteo.get(n.tipo) || 0) + 1));
+  const lista = d.novedades.filter(n => (d.novTipo === 'todos' || n.tipo === d.novTipo) && (!q || sinAcentos(n.titulo + ' ' + (n.detalle || '') + ' ' + (n.persona?.nombre || '')).includes(q)));
+  const chips = [['todos', 'Todas', d.novedades.length], ...[...conteo].map(([t, k]) => [t, NOMBRE_NOVEDAD[t] || t, k])];
+  const verCli = esRol('socio','administrativo');
+  return `<div class="bloque">
+    <p class="muted">Clientes creados y precios registrados o cambiados por el equipo. Es solo para que estés al tanto: no hay que aprobar nada.</p>
+    ${d.novedades.length > 1 ? `<div class="tabs" aria-label="Filtrar novedades">${chips.map(([id, n, k]) => `<button data-a="nov-tipo" data-id="${esc(id)}" aria-selected="${id === d.novTipo}">${esc(n)} · ${k}</button>`).join('')}</div>` : ''}
+    ${!lista.length ? vacio('Sin novedades', d.novedades.length ? 'Cambia la búsqueda o el filtro.' : 'Cuando alguien cree un cliente o registre un precio, lo verás aquí.') : `
+    <div class="lista">${lista.map(n => { const nueva = n.creado > d.visto && n.por !== S.perfil.id; return `<article class="fila${nueva ? ' nueva' : ''}">
+      <div><strong>${esc(n.titulo)}</strong></div>
+      <span class="pill st-${n.tipo === 'cliente_nuevo' ? 'recibido' : n.tipo === 'precio_cambio' ? 'en_taller' : 'entregado'}">${esc(NOMBRE_NOVEDAD[n.tipo] || n.tipo)}</span>
+      <div class="meta"><span>${esc(n.persona?.nombre || '—')}</span><span>${esc(horaCorta(n.creado))}</span>${n.detalle ? `<span>${esc(n.detalle)}</span>` : ''}${nueva ? '<span class="chip">nueva</span>' : ''}</div>
+      ${verCli && n.cliente_id ? `<div class="pie"><span></span><button class="btn btn-s" data-a="al-cliente" data-id="${n.cliente_id}">Ver cliente</button></div>` : ''}
+    </article>`; }).join('')}</div>`}
+  </div>`;
+}
 
 /* ---------- Detalle con comentarios ---------- */
 R.hojas.alerta = () => {
@@ -116,6 +157,7 @@ async function recargarLista(){
 
 Object.assign(R.acciones, {
   'al-tipo': d => { S.datos.alertas.tipo = d.id; renderMain(); },
+  'nov-tipo': d => { S.datos.alertas.novTipo = d.id; renderMain(); },
   'al-ver': d => abrirAlerta(d.id),
   'al-cliente': async d => { await R.acciones.mod({ id:'clientes' }); abrirCliente(d.id); },
   'al-precio': () => {

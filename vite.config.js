@@ -1,13 +1,20 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'node:fs';
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 // base './' permite publicar en la raíz de un dominio o en una subcarpeta (GitHub Pages).
 export default defineConfig({
   base: './',
+  define: { __VERSION__: JSON.stringify(version) },
   plugins: [
     VitePWA({
+      // La app se actualiza sola: main.js registra el service worker, revisa si hay versión nueva
+      // cada vez que se vuelve a la app (y cada 30 minutos) y recarga la página al instalarla.
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      injectRegister: false,
+      includeAssets: ['icon.svg', 'logo.png'],
       manifest: {
         name: 'Pinturas Liz',
         short_name: 'Pinturas Liz',
@@ -16,8 +23,8 @@ export default defineConfig({
         start_url: './',
         scope: './',
         display: 'standalone',
-        background_color: '#F2F3F8',
-        theme_color: '#1A1D38',
+        background_color: '#F4F6FB',
+        theme_color: '#0E3A8C',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -25,7 +32,10 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png}']
+        globPatterns: ['**/*.{js,css,html,svg,png}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true
       }
     })
   ]

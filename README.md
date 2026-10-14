@@ -10,7 +10,7 @@ Aplicación web instalable (PWA) para celular y computadora, con usuarios y base
 | **Producción** | Órdenes que llegan del Taller, lotes fabricados, validación del químico y entrega del lote al Taller | Laboratorio, Socios |
 | **Taller** | Qué falta envasar, registro de envasados, órdenes al Laboratorio y materiales que consume cada bolsa | Taller, Despacho, Administración, Socios |
 | **Almacén** | Existencias y movimientos de los cinco almacenes, mínimos y alertas | Cada área ve sus almacenes |
-| **Alertas** (campana) | Datos que faltan o están mal, como avisos con comentarios. Las de precio se cierran solas al registrar el precio | Socios ven y resuelven todas; cada persona puede avisar un error y ve sus avisos |
+| **Alertas y Novedades** (campana) | Alertas: datos que faltan o están mal, con comentarios. Novedades: clientes creados y precios registrados o cambiados por el equipo | Socios: alertas y novedades. Administración: novedades. Todos pueden avisar un error |
 | **Usuarios** | Asignar el perfil de cada persona (desde *Mi cuenta*) | Socios |
 
 ---
@@ -112,7 +112,7 @@ En la terminal de VS Code (**Terminal > New Terminal**):
 
 ```bash
 git add .
-git commit -m "Versión 0.4.1: alertas para socios y precio a mano"
+git commit -m "Versión 0.4.2: precio sugerido, novedades y colores de la marca"
 git push
 ```
 
@@ -185,12 +185,17 @@ Las cantidades de granel se manejan en **litros**, calculados como bolsas × fra
 - Los precios se guardan **por docena**, por cliente, producto y medida. Un paquete de 6 cuesta la mitad.
 - **No hay precios de lista.** Cada precio es de un cliente.
 - Si el cliente es nuevo o no tiene precio para esa medida, al hacer el pedido la app pide **escribir el precio
-  por docena acordado**. Ese precio queda guardado como precio del cliente para los siguientes pedidos.
+  por docena acordado** o usar el **precio sugerido**. Ese precio queda guardado como precio del cliente.
+- **Precio sugerido**: el precio por docena que más clientes pagan hoy por ese producto y medida (la moda).
+  **Medida habitual**: la medida de cada producto que más clientes compran. El catálogo muestra el sugerido de la
+  medida habitual, la hoja del producto la elige por defecto y hay botones para usar ambos.
+- Si cambias el cliente de un pedido, el carrito se recalcula con los precios del nuevo cliente; lo que no tenga
+  precio queda marcado en el carrito para escribirlo ahí mismo.
 - Quién puede hacer qué:
 
   | Acción | Socio | Administración | Ventas |
   | --- | --- | --- | --- |
-  | Escribir el primer precio de un cliente (en el pedido o con *Agregar precio*) | Sí | Sí, con aviso a socios | Sí, con aviso a socios |
+  | Escribir el primer precio de un cliente (en el pedido o con *Agregar precio*) | Sí | Sí | Sí |
   | Cambiar un precio que ya existe | Sí | Sí | No: avisa a los socios |
   | Agregar una medida nueva a un producto (por ejemplo, la primera de Pegatransfer) | Sí | No | No |
 
@@ -205,11 +210,16 @@ Las cantidades de granel se manejan en **litros**, calculados como bolsas × fra
 Desde ahora los clientes y precios se mantienen en la aplicación. El Excel ya no es la fuente: no vuelvas a
 ejecutar la carga, porque duplicaría clientes.
 
+### Novedades (campana de la barra superior)
+
+- Cuando alguien crea un cliente o registra o cambia un precio, socios y Administración lo ven en **Novedades**,
+  con quién lo hizo y el precio anterior. Es solo informativo: no hay que aprobar nada.
+- El número amarillo de la campana suma las alertas abiertas y las novedades que aún no viste.
+
 ### Alertas (campana de la barra superior)
 
 - La carga del Excel dejó una alerta por cada dato faltante o dudoso: precios en cero, precios repetidos,
   productos sin precio o sin código y clientes sin teléfono, dirección o documento.
-- La app crea alertas sola cuando alguien que no es socio escribe un precio nuevo o crea un cliente.
 - Cualquier persona puede usar **Avisar un error** (en la campana, en *Mi cuenta* o en la ficha del cliente).
 - En cada alerta se conversa con comentarios. Solo un socio la marca como **resuelta** (o la reabre).
   Las de *Falta precio* y *Producto sin precio* se resuelven solas al registrar el precio.
@@ -229,4 +239,5 @@ ejecutar la carga, porque duplicaría clientes.
 | 0.2.0 | 0001, 0002 | Pedidos con usuarios reales, perfiles, catálogo, consolidado y Usuarios |
 | 0.3.0 | 0003 | Cobranzas, Producción, Taller y Almacén. Saldo y cobro en el detalle del pedido. Usuarios pasa a *Mi cuenta*. Flujo que mantiene activo Supabase |
 | 0.4.0 | 0004, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` | Datos reales: 302 clientes, 42 productos, 423 colores y 2.079 precios. Precios por docena con vigencia e historial. Módulo Clientes. Vendedores vinculados a usuarios |
-| 0.4.1 | (0004 si no la ejecutaste) **0005**, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` nuevos | Carga desde el Excel corregido: precios repetidos como historial 2025 → 2026, productos nuevos sin código, sin precios en cero. Sin precios de lista: precio escrito a mano para clientes nuevos o sin precio. Solo socios agregan medidas. Alertas con comentarios para socios |
+| 0.4.1 | (0004 si no la ejecutaste) 0005, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` nuevos | Carga desde el Excel corregido: precios repetidos como historial 2025 → 2026, productos nuevos sin código, sin precios en cero. Sin precios de lista: precio escrito a mano para clientes nuevos o sin precio. Solo socios agregan medidas. Alertas con comentarios para socios |
+| 0.4.2 | **0006** | Precio sugerido (moda) y medida habitual con botones para usarlos. Novedades para socios y Administración (clientes y precios nuevos). El carrito se recalcula al cambiar de cliente. Colores y logo de la marca. La app se actualiza sola en cada celular y muestra su versión en *Mi cuenta* |

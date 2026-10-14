@@ -16,7 +16,7 @@ const estado = id => ESTADOS.find(e => e.id === id) || ESTADOS[0];
 export const pill = id => `<span class="pill st-${id}">${esc(estado(id).nombre)}</span>`;
 const prod = id => S.catalogo.find(p => p.id === id);
 const clave = i => i.color_id + '|' + i.presentacion_id;
-const totalDe = items => items.reduce((t, i) => t + i.cant * i.precio, 0);
+const totalDe = items => items.reduce((t, i) => t + i.cant * (i.precio || 0), 0);
 export const bolsasDe = items => items.reduce((t, i) => t + i.cant, 0);
 const visibles = () => rol().ve === 'ninguno' ? [] : S.pedidos;
 const guardaCarrito = () => guarda('pl_carrito', S.carrito);
@@ -24,31 +24,63 @@ const guardaCarrito = () => guarda('pl_carrito', S.carrito);
 S.carrito = lee('pl_carrito', []);
 S.form = { cliente: lee('pl_cliente', ''), canal:'WhatsApp', condicion:'contado', dias:'15', entrega:'local', agencia:'', fecha:hoyISO(), notas:'' };
 S.cobrosPedido = {};
-S.preciosCli = {};            // 'producto|ml' -> { precio_docena, propio } del cliente elegido
+S.preciosCli = {};            // 'producto|ml' -> { precio_docena } del cliente elegido
+S.ref = { precios:{}, habitual:{} };   // precio sugerido (moda), máximo y mínimo por 'producto|ml' y medida habitual por producto
 S.miVendedor = null;          // código de vendedor del usuario (JORGE, LILY…) si está vinculado
+// Precios escritos a mano para el cliente elegido, por presentación (se olvidan al cambiar de cliente)
+S.manuales = lee('pl_manuales', { cliente:'', m:{} });
+const guardaManuales = () => guarda('pl_manuales', S.manuales);
 
 /* ---------- Precios del cliente elegido ---------- */
 const precioDocena = (productoId, ml) => S.preciosCli[productoId + '|' + ml]?.precio_docena;
-const precioPaquete = (productoId, pr) => { const d = precioDocena(productoId, pr.medida_ml); return d == null ? null : Math.round(d * pr.unidades / 12 * 100) / 100; };
 const clienteActual = () => S.clientes.find(c => c.id === S.form.cliente);
 const paquete = und => und === 12 ? 'docena' : und === 6 ? 'media docena' : `paquete de ${und}`;
 const redondea = n => Math.round(n * 100) / 100;
-// Precio escrito a mano en la hoja del producto (cuando el cliente no tiene precio para esa medida)
-const manualDe = pr => { const v = Number(String(S.sel?.manual?.[pr.id] ?? '').replace(',', '.')); return v > 0 ? v : null; };
-const precioSel = (p, pr) => { const v = precioPaquete(p.id, pr); if (v != null) return v; const m = manualDe(pr); return m == null ? null : redondea(m * pr.unidades / 12); };
+export const refDe = (productoId, ml) => S.ref.precios[productoId + '|' + ml];
+export const habitualDe = productoId => S.ref.habitual[productoId];
+// Precio escrito a mano (por docena) para una presentación del cliente elegido
+const manualDe = pr => {
+  if (S.manuales.cliente !== S.form.cliente) return null;
+  const v = Number(String(S.manuales.m[pr.id] ?? '').replace(',', '.'));
+  return v > 0 ? v : null;
+};
+// Docena que se cobrará: la del cliente; si no tiene, la escrita a mano
+const docenaDe = (productoId, pr) => precioDocena(productoId, pr.medida_ml) ?? manualDe(pr);
+const precioPaquete = (productoId, pr) => { const d = docenaDe(productoId, pr); return d == null ? null : redondea(d * pr.unidades / 12); };
+const tienePrecio = (productoId, pr) => precioDocena(productoId, pr.medida_ml) != null;
 const escribePrecio = () => rol().crea && !!clienteActual();
 
+export async function cargarReferencias(){
+  try { S.ref = await D.referenciasPrecio(); } catch (e) { /* sin referencias: solo no se muestran */ }
+}
+
 export async function elegirCliente(id, { silencio = false } = {}){
+  const cambio = (id || '') !== S.form.cliente;
   S.form.cliente = id || ''; guarda('pl_cliente', S.form.cliente);
+  if (S.manuales.cliente !== S.form.cliente) { S.manuales = { cliente:S.form.cliente, m:{} }; guardaManuales(); }
   const c = clienteActual();
-  if (c) Object.assign(S.form, { condicion: c.condicion_habitual || 'contado', dias: String(c.dias_credito_habitual || 15),
+  if (c && cambio) Object.assign(S.form, { condicion: c.condicion_habitual || 'contado', dias: String(c.dias_credito_habitual || 15),
     entrega: c.agencia_habitual ? 'agencia' : S.form.entrega, agencia: c.agencia_habitual || S.form.agencia });
   try {
     const lista = c ? await D.preciosVigentes(c.id) : [];
     S.preciosCli = Object.fromEntries(lista.map(p => [p.producto_id + '|' + p.medida_ml, p]));
   } catch (e) { S.preciosCli = {}; toast(e.message); }
-  const antes = S.carrito.length; sincronizarCarrito();
-  if (!silencio && c) toast(`Precios de ${c.nombre}` + (S.carrito.length < antes ? ' · se quitaron productos sin precio para este cliente' : ''));
+  sincronizarCarrito();
+  const faltan = S.carrito.filter(i => i.precio == null).length;
+  if (!silencio && c) toast(`Precios de ${c.nombre}` + (faltan ? ` · ${faltan} línea${faltan > 1 ? 's' : ''} sin precio: escríbelo en el carrito` : ''));
+}
+
+// Caja para escribir el precio de una presentación que el cliente no tiene, con el precio sugerido como guía
+// (sugerido = el precio por docena que más clientes pagan hoy por ese producto y medida)
+function cajaPrecio(p, pr, conTitulo){
+  const ref = refDe(p.id, pr.medida_ml), v = S.manuales.cliente === S.form.cliente ? (S.manuales.m[pr.id] ?? '') : '';
+  return `<div class="precio-caja">
+    ${conTitulo ? `<strong>${esc(p.nombre)} · ${pr.medida_ml} ml</strong>` : ''}
+    <div class="precio-fila"><label class="sr" for="pm-${pr.id}">Precio por docena de ${esc(p.nombre)} ${pr.medida_ml} ml</label>
+      <span class="prefijo">S/</span><input id="pm-${pr.id}" class="precio-input num" data-pm="${pr.id}" type="text" inputmode="decimal" autocomplete="off" value="${esc(v)}" placeholder="por docena">
+      ${ref ? `<button class="btn btn-s btn-sug" data-a="usar-ref" data-pres="${pr.id}" data-v="${ref.comun}">Usar sugerido ${soles(ref.comun)}</button>` : ''}</div>
+    <span class="muted">${ref ? `Sugerido: lo que más clientes pagan (${ref.clientes} con precio; van de ${soles(ref.minimo)} a ${soles(ref.maximo)} la docena).` : 'Aún no hay precio sugerido: ningún cliente tiene precio para esta medida.'}</span>
+  </div>`;
 }
 
 function frascos(hexes){
@@ -104,6 +136,8 @@ function vistaCatalogo(){
   return barraCliente + `<div class="grid">${lista.map(p => {
     const docenas = p.presentaciones.map(x => precioDocena(p.id, x.medida_ml)).filter(v => v != null);
     const desde = docenas.length ? Math.min(...docenas) : null, ml = [...new Set(p.presentaciones.map(x => x.medida_ml))].join(' · ');
+    const hab = habitualDe(p.id), ref = hab ? refDe(p.id, hab) : null;
+    const guia = ref ? `Sugerido ${soles(ref.comun)} <small>la docena · ${hab} ml</small>` : '';
     const enCar = S.carrito.filter(i => i.producto_id === p.id).reduce((t, i) => t + i.cant, 0);
     const sws = p.colores.slice(0, 8).map(c => `<span class="sw" style="background:${esc(c.hex)}" title="${esc(c.nombre)}"></span>`).join('') + (p.colores.length > 8 ? `<span class="muted" style="font-size:12px">+${p.colores.length - 8}</span>` : '');
     const sinMedidas = !p.presentaciones.length;
@@ -111,7 +145,8 @@ function vistaCatalogo(){
     return `<article class="card"><div class="card-img">${frascos(p.colores.map(c => c.hex))}</div><div class="card-body">
       <span class="eyebrow">${esc(p.linea)}</span><h3>${esc(p.nombre)}</h3>${p.descripcion ? `<p class="desc">${esc(p.descripcion)}</p>` : ''}
       <div class="sw-row">${sws}</div>
-      <p class="price num">${sinMedidas ? '<small>Sin medidas ni precio</small>' : desde != null ? `Desde ${soles(desde)} <small>la docena · ${ml} ml</small>` : `<small>${c ? 'Sin precio para este cliente' : 'Elige un cliente para ver precios'} · ${ml} ml</small>`}</p>
+      <p class="price num">${sinMedidas ? '<small>Sin medidas ni precio</small>' : desde != null ? `Desde ${soles(desde)} <small>la docena · ${ml} ml</small>` : guia || `<small>Sin precio · ${ml} ml</small>`}</p>
+      ${!sinMedidas && desde == null && c ? '<span class="muted" style="font-size:12px">Sin precio para este cliente: se escribe al pedir</span>' : ''}
       ${enCar ? `<span><span class="chip num">${enCar} en el carrito</span></span>` : ''}
       ${sinMedidas ? `<button class="btn" data-a="medida-nueva" data-producto="${p.id}">Agregar medida</button>` : `<button class="btn btn-p" data-a="abrir-prod" data-id="${p.id}">Elegir colores</button>`}</div></article>`;
   }).join('')}</div>`;
@@ -147,24 +182,24 @@ function vistaConsolidado(){
 /* ---------- Hojas ---------- */
 R.hojas.producto = () => {
   const p = prod(S.sel.prod); if (!p) return cab('Producto') + '<div class="hoja-body"><p class="muted">Este producto ya no está en el catálogo.</p></div>';
-  const pr = p.presentaciones[S.sel.pres], precio = pr ? precioSel(p, pr) : null, n = Object.values(S.sel.cant).reduce((t, v) => t + v, 0);
+  const pr = p.presentaciones[S.sel.pres], precio = pr ? precioPaquete(p.id, pr) : null, n = Object.values(S.sel.cant).reduce((t, v) => t + v, 0);
   const q = sinAcentos(S.sel.q || ''), colores = p.colores.filter(c => !q || sinAcentos(c.nombre + ' ' + (c.codigo || '')).includes(q));
-  const c = clienteActual(), sinPrecio = pr && precioPaquete(p.id, pr) == null;
+  const c = clienteActual(), hab = habitualDe(p.id), sinPrecio = pr && !tienePrecio(p.id, pr);
   const manual = sinPrecio && c ? (escribePrecio() ? `<div class="aviso-caja">
-      <p><strong>${esc(c.nombre)} no tiene precio para ${pr.medida_ml} ml.</strong> Escribe el precio por docena acordado. Quedará como su precio${esRol('socio') ? '' : ' y los socios recibirán un aviso para revisarlo'}.</p>
-      ${campo('precio-manual', 'Precio por docena (S/)', `<input id="precio-manual" type="text" inputmode="decimal" autocomplete="off" value="${esc(S.sel.manual[pr.id] || '')}" placeholder="0.00">`)}
-    </div>` : '<p class="muted">Este cliente no tiene precio para esta medida.</p>') : '';
+      <p><strong>${esc(c.nombre)} no tiene precio para ${pr.medida_ml} ml.</strong> Escribe el precio por docena acordado o usa el sugerido. Quedará como su precio para los próximos pedidos.</p>
+      ${cajaPrecio(p, pr, false)}
+      ${hab && hab !== pr.medida_ml && refDe(p.id, hab) && p.presentaciones.some(x => x.medida_ml === hab) ? `<button class="btn btn-s btn-sug" data-a="usar-habitual" data-producto="${p.id}">Usar la medida habitual: ${hab} ml · sugerido ${soles(refDe(p.id, hab).comun)}</button>` : ''}</div>` : '<p class="muted">Este cliente no tiene precio para esta medida.</p>') : '';
   return cab(esc(p.nombre), c ? `Precios de ${esc(c.nombre)}` : 'Elige un cliente para ver precios') + `<div class="hoja-body">
     ${!c ? `<div class="cliente-bar compacto"><div><strong>Sin cliente</strong><span class="muted">Elige a quién le vendes para ver sus precios.</span></div><button class="btn btn-p btn-s" data-a="elegir-cliente">Elegir cliente</button></div>` : ''}
-    <div><p class="sub">Presentación</p><div class="pres">${p.presentaciones.map((x, i) => { const v = precioPaquete(p.id, x), d = precioDocena(p.id, x.medida_ml), m = manualDe(x);
-      return `<button data-a="pres" data-i="${i}" aria-pressed="${i === S.sel.pres}"><span>${x.medida_ml} ml · ${paquete(x.unidades)}</span><span class="num">${v != null ? soles(v) + (x.unidades !== 12 ? ` <small class="muted">(${soles(d)} docena)</small>` : '') : m != null ? soles(precioSel(p, x)) + ' <small class="muted">a mano</small>' : '<small class="muted">Sin precio</small>'}</span></button>`; }).join('')}</div>
+    <div><p class="sub">Presentación</p><div class="pres" data-vivo="pres">${p.presentaciones.map((x, i) => { const v = precioPaquete(p.id, x), d = docenaDe(p.id, x), propio = tienePrecio(p.id, x), ref = refDe(p.id, x.medida_ml);
+      return `<button data-a="pres" data-i="${i}" aria-pressed="${i === S.sel.pres}"><span>${x.medida_ml} ml · ${paquete(x.unidades)}${x.medida_ml === hab ? ' <small class="chip">habitual</small>' : ''}</span><span class="num">${v != null ? soles(v) + (x.unidades !== 12 ? ` <small class="muted">(${soles(d)} docena)</small>` : '') + (propio ? '' : ' <small class="muted">a mano</small>') : `<small class="muted">${ref ? 'Sugerido ' + soles(ref.comun) : 'Sin precio'}</small>`}</span></button>`; }).join('')}</div>
       ${esRol('socio') ? `<button class="btn btn-s" data-a="medida-nueva" data-producto="${p.id}" style="margin-top:8px">Agregar medida</button>` : ''}</div>
     ${manual}
     <div><p class="sub">Paquetes por color</p>
       ${p.colores.length > 10 ? `<input id="buscar-color" class="buscador" type="search" placeholder="Buscar color o código" value="${esc(S.sel.q || '')}" aria-label="Buscar color" autocomplete="off">` : ''}
       <div class="colores">${colores.map(c => { const v = S.sel.cant[c.id] || 0; return `<div class="color"><span class="sw" style="background:${esc(c.hex)}"></span><span class="n">${esc(c.nombre)}${c.codigo ? ` <small class="muted">${esc(c.codigo)}</small>` : ''}</span>
       <div class="step"><button data-a="menos-color" data-c="${c.id}" aria-label="Quitar un paquete de ${esc(c.nombre)}" ${v ? '' : 'disabled'}>−</button><output class="num">${v}</output><button data-a="mas-color" data-c="${c.id}" aria-label="Agregar un paquete de ${esc(c.nombre)}">+</button></div></div>`; }).join('') || '<p class="muted">Ningún color coincide.</p>'}</div></div>
-    ${errorHoja()}</div><div class="hoja-pie"><div><div class="total num">${precio == null ? 'Sin precio' : soles(n * precio)}</div><div class="muted num">${n} ${pr ? paquete(pr.unidades) + (n === 1 ? '' : 's') : ''} · ${pr ? n * pr.unidades : 0} frascos</div></div><button class="btn btn-p" data-a="agregar" ${n && c ? '' : 'disabled'}>Agregar al carrito</button></div>`;
+    ${errorHoja()}</div><div class="hoja-pie" data-vivo="pie"><div><div class="total num">${precio == null ? (n ? 'Falta el precio' : 'Elige colores') : soles(n * precio)}</div><div class="muted num">${n} ${pr ? paquete(pr.unidades) + (n === 1 ? '' : 's') : ''} · ${pr ? n * pr.unidades : 0} frascos</div></div><button class="btn btn-p" data-a="agregar" ${n && c ? '' : 'disabled'}>Agregar al carrito</button></div>`;
 };
 
 // Medida nueva para un producto (solo socios): por ejemplo, la primera medida de Pegatransfer
@@ -199,10 +234,16 @@ R.hojas.carrito = () => {
   const f = S.form, items = S.carrito;
   if (!items.length) return cab('Carrito') + `<div class="hoja-body">${vacio('El carrito está vacío', 'Abre un producto del catálogo y elige las bolsas por color.', '<button class="btn btn-p" data-a="cerrar">Ver catálogo</button>')}</div>`;
   const cli = clienteActual();
+  // Presentaciones del carrito sin precio para este cliente: se escriben aquí
+  const faltan = [...new Map(items.filter(i => !tienePrecio(i.producto_id, { medida_ml:i.ml })).map(i => [i.presentacion_id, i])).values()]
+    .map(i => { const p = prod(i.producto_id); return { p, pr: p?.presentaciones.find(x => x.id === i.presentacion_id) }; }).filter(x => x.p && x.pr);
+  const sinPrecio = items.some(i => i.precio == null);
   return cab('Carrito', `${bolsasDe(items)} paquetes en ${items.length} líneas`) + `<div class="hoja-body">
-    <div>${items.map(i => `<div class="linea"><div class="t"><span class="sw" style="background:${esc(i.hex)}"></span><span>${esc(i.nombre)} · ${esc(i.color)}</span></div>
+    ${cli && faltan.length ? `<div class="aviso-caja"><p><strong>${esc(cli.nombre)} no tiene precio para ${faltan.length === 1 ? 'este producto' : 'estos productos'}.</strong> Escribe el precio por docena o usa el sugerido; quedará como su precio.</p>
+      ${faltan.map(({ p, pr }) => cajaPrecio(p, pr, true)).join('')}</div>` : ''}
+    <div data-vivo="lineas">${items.map(i => `<div class="linea"><div class="t"><span class="sw" style="background:${esc(i.hex)}"></span><span>${esc(i.nombre)} · ${esc(i.color)}</span></div>
       <div class="step"><button data-a="linea-menos" data-k="${esc(clave(i))}" aria-label="Quitar una bolsa">−</button><output class="num">${i.cant}</output><button data-a="linea-mas" data-k="${esc(clave(i))}" aria-label="Agregar una bolsa">+</button></div>
-      <div class="s num">${i.ml} ml · ${paquete(i.und)} · ${soles(i.precio)}${i.manual ? ' <span class="chip">precio a mano</span>' : ''}</div><div class="num" style="text-align:right;font-weight:700">${soles(i.cant * i.precio)}</div></div>`).join('')}</div>
+      <div class="s num">${i.ml} ml · ${paquete(i.und)} · ${i.precio == null ? '<span class="txt-alerta">sin precio</span>' : soles(i.precio) + (tienePrecio(i.producto_id, { medida_ml:i.ml }) ? '' : ' <span class="chip">a mano</span>')}</div><div class="num" style="text-align:right;font-weight:700">${i.precio == null ? '—' : soles(i.cant * i.precio)}</div></div>`).join('')}</div>
     <p class="sub">Datos del pedido</p>
     <div class="campos">
       <div class="campo full"><label>Cliente</label><div class="cliente-bar compacto"><div><strong>${cli ? esc(cli.nombre) : 'Sin elegir'}</strong>${cli ? `<span class="muted">${esc([cli.codigo, cli.zona].filter(Boolean).join(' · '))}${cli.limite_credito != null ? ' · límite ' + soles(cli.limite_credito) : ''}</span>` : ''}</div><button class="btn btn-s" data-a="elegir-cliente">${cli ? 'Cambiar' : 'Elegir'}</button></div></div>
@@ -215,7 +256,7 @@ R.hojas.carrito = () => {
       <div class="campo full"><label for="f-notas">Notas (opcional)</label><textarea id="f-notas" data-f="notas" rows="2" maxlength="300">${esc(f.notas)}</textarea></div>
     </div>
     ${errorHoja()}
-    </div><div class="hoja-pie"><div><div class="muted">Total</div><div class="total num">${soles(totalDe(items))}</div></div><button class="btn btn-p" data-a="confirmar" ${S.enviando ? 'disabled' : ''}>${S.enviando ? 'Registrando…' : 'Confirmar pedido'}</button></div>`;
+    </div><div class="hoja-pie" data-vivo="pie"><div><div class="muted">Total${sinPrecio ? ' (faltan precios)' : ''}</div><div class="total num">${soles(totalDe(items))}</div></div><button class="btn btn-p" data-a="confirmar" ${S.enviando ? 'disabled' : ''}>${S.enviando ? 'Registrando…' : 'Confirmar pedido'}</button></div>`;
 };
 
 R.hojas.pedido = () => {
@@ -241,6 +282,12 @@ R.hojas.pedido = () => {
     </div><div class="hoja-pie"><div style="display:flex;gap:8px;flex-wrap:wrap">${rol().crea ? `<button class="btn" data-a="repetir" data-id="${p.id}">Repetir pedido</button>` : ''}${anulable ? `<button class="btn btn-danger" data-a="anular" data-id="${p.id}">${S.hoja.anular ? 'Confirmar anulación' : 'Anular'}</button>` : ''}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">${puedeCobrar ? `<button class="btn" data-a="cobrar-pedido" data-id="${p.id}">Registrar cobro</button>` : ''}${puede ? `<button class="btn btn-p" data-a="avanzar" data-id="${p.id}">${e.accion}</button>` : ''}</div></div>`;
 };
+// Guarda un precio escrito a mano para una presentación del cliente elegido y recalcula el carrito
+export function fijarManual(presId, valor){
+  if (S.manuales.cliente !== S.form.cliente) S.manuales = { cliente:S.form.cliente, m:{} };
+  S.manuales.m[presId] = valor; guardaManuales(); S.error = '';
+  sincronizarCarrito();
+}
 export const etiquetaCobro = est => est === 'recibido' ? '<span class="pill st-entregado">Recibido</span>' : est === 'anulado' ? '<span class="pill st-anulado">Anulado</span>' : '<span class="pill st-en_taller">Por entregar</span>';
 
 export async function abrirPedido(id, extra = {}){
@@ -252,30 +299,25 @@ export async function abrirPedido(id, extra = {}){
 }
 
 /* ---------- Acciones ---------- */
+// Recalcula el precio de cada línea con el cliente elegido. Las líneas sin precio se quedan y piden el precio.
 export function sincronizarCarrito(){
   S.carrito = S.carrito.flatMap(i => {
     const p = prod(i.producto_id), c = p?.colores.find(x => x.id === i.color_id), pr = p?.presentaciones.find(x => x.id === i.presentacion_id);
     if (!p || !c || !pr) return [];
-    const precio = precioPaquete(p.id, pr);
-    if (precio != null) { const { manual, manualCliente, ...resto } = i; return [{ ...resto, nombre:p.nombre, color:c.nombre, hex:c.hex, ml:pr.medida_ml, und:pr.unidades, precio }]; }
-    // Precio escrito a mano: vale solo para el cliente con el que se escribió
-    if (i.manual && i.manualCliente === S.form.cliente) return [{ ...i, nombre:p.nombre, color:c.nombre, hex:c.hex, ml:pr.medida_ml, und:pr.unidades, precio: redondea(i.manual * pr.unidades / 12) }];
-    return [];
+    const { manual, manualCliente, ...resto } = i;             // campos de la versión 0.4.1
+    return [{ ...resto, nombre:p.nombre, color:c.nombre, hex:c.hex, ml:pr.medida_ml, und:pr.unidades, precio: precioPaquete(p.id, pr) }];
   });
   guardaCarrito();
 }
 function agregarAlCarrito(){
-  const p = prod(S.sel.prod), pr = p.presentaciones[S.sel.pres], precio = precioSel(p, pr); let n = 0;
+  const p = prod(S.sel.prod), pr = p.presentaciones[S.sel.pres], precio = precioPaquete(p.id, pr); let n = 0;
   if (!clienteActual()) { S.error = 'Elige primero el cliente.'; return renderHoja(); }
-  if (precio == null) { S.error = escribePrecio() ? 'Escribe el precio por docena para este cliente.' : 'Esta presentación no tiene precio para este cliente.'; renderHoja(); $('#precio-manual')?.focus(); return; }
-  const manual = precioPaquete(p.id, pr) == null ? manualDe(pr) : null;
-  // Todas las líneas de la misma medida usan el mismo precio escrito a mano
-  if (manual) S.carrito.forEach(i => { if (i.presentacion_id === pr.id && i.manual) { i.manual = manual; i.precio = precio; } });
+  if (precio == null) { S.error = escribePrecio() ? 'Escribe el precio por docena para este cliente (o usa el sugerido).' : 'Esta presentación no tiene precio para este cliente.'; renderHoja(); $('#pm-' + pr.id)?.focus(); return; }
   Object.entries(S.sel.cant).forEach(([colorId, cant]) => { if (!cant) return;
     const c = p.colores.find(x => x.id === colorId);
-    const item = { producto_id:p.id, color_id:c.id, presentacion_id:pr.id, nombre:p.nombre, color:c.nombre, hex:c.hex, ml:pr.medida_ml, und:pr.unidades, precio, cant,
-      ...(manual ? { manual, manualCliente: S.form.cliente } : {}) };
+    const item = { producto_id:p.id, color_id:c.id, presentacion_id:pr.id, nombre:p.nombre, color:c.nombre, hex:c.hex, ml:pr.medida_ml, und:pr.unidades, precio, cant };
     const ya = S.carrito.find(i => clave(i) === clave(item)); if (ya) ya.cant += cant; else S.carrito.push(item); n += cant; });
+  sincronizarCarrito();
   guardaCarrito(); S.hoja = null; renderTodo(); toast(n + ' paquetes agregados al carrito');
 }
 async function confirmarPedido(){
@@ -283,18 +325,24 @@ async function confirmarPedido(){
   if (!S.carrito.length || S.enviando) return;
   if (!clienteActual()) { S.error = 'Elige el cliente del pedido.'; return renderHoja(); }
   if (!f.fecha) { S.error = 'Elige la fecha de entrega.'; return renderHoja(); }
+  sincronizarCarrito();
+  const falta = S.carrito.find(i => i.precio == null);
+  if (falta) { S.error = `Escribe el precio por docena de ${falta.nombre} ${falta.ml} ml.`; renderHoja(); $('#pm-' + falta.presentacion_id)?.focus(); return; }
   S.enviando = true; S.error = ''; renderHoja();
   try {
     const clienteId = f.cliente;
     const id = await D.crearPedido({
       cliente_id:clienteId, canal:f.canal, condicion:f.condicion, dias_credito: f.condicion === 'credito' ? Number(f.dias) : null,
       entrega:f.entrega, agencia: f.entrega === 'agencia' ? f.agencia.trim() : null, fecha_entrega:f.fecha, notas:f.notas.trim() || null
-    }, S.carrito.map(i => ({ producto_id:i.producto_id, color_id:i.color_id, presentacion_id:i.presentacion_id, bolsas:i.cant,
-      ...(i.manual ? { precio_docena:i.manual } : {}) })));
-    const habiaManual = S.carrito.some(i => i.manual);
+    }, S.carrito.map(i => {
+      const p = prod(i.producto_id), pr = p.presentaciones.find(x => x.id === i.presentacion_id);
+      return { producto_id:i.producto_id, color_id:i.color_id, presentacion_id:i.presentacion_id, bolsas:i.cant,
+        ...(tienePrecio(p.id, pr) ? {} : { precio_docena: manualDe(pr) }) };
+    }));
+    const habiaManual = S.carrito.some(i => !tienePrecio(i.producto_id, { medida_ml:i.ml }));
     S.carrito = []; guardaCarrito(); Object.assign(f, { notas:'' });
     await recargarPedidos();
-    if (habiaManual) { await elegirCliente(clienteId, { silencio:true }); R.acciones['contar-alertas']?.(); }
+    if (habiaManual) { S.manuales = { cliente:'', m:{} }; await elegirCliente(clienteId, { silencio:true }); cargarReferencias(); }
     const p = S.pedidos.find(x => x.id === id);
     S.tab.pedidos = 'pedidos'; S.filtro = 'todos'; $('#buscar').value = S.q.pedidos;
     S.enviando = false; renderTodo(); abrirPedido(id, { recien:true });
@@ -319,12 +367,11 @@ async function repetir(id){
     const pr = S.catalogo.find(x => x.colores.some(c => c.id === i.color_id)), c = pr?.colores.find(x => x.id === i.color_id), pre = pr?.presentaciones.find(x => x.id === i.presentacion_id);
     if (!pr || !c || !pre) { faltan++; return; }
     const precio = precioPaquete(pr.id, pre);
-    if (precio == null) { faltan++; return; }
     const item = { producto_id:pr.id, color_id:c.id, presentacion_id:pre.id, nombre:pr.nombre, color:c.nombre, hex:c.hex, ml:pre.medida_ml, und:pre.unidades, precio, cant:i.cant };
     const ya = S.carrito.find(x => clave(x) === clave(item)); if (ya) ya.cant += i.cant; else S.carrito.push(item);
   });
-  guardaCarrito(); abrirHoja({ tipo:'carrito' }); renderNav(); renderMain();
-  toast(faltan ? `${faltan} líneas ya no están en el catálogo o no tienen precio; se copió el resto` : 'Productos de ' + p.codigo + ' copiados al carrito');
+  sincronizarCarrito(); abrirHoja({ tipo:'carrito' }); renderNav(); renderMain();
+  toast(faltan ? `${faltan} líneas ya no están en el catálogo; se copió el resto` : 'Productos de ' + p.codigo + ' copiados al carrito');
 }
 function linea(k, d){
   const i = S.carrito.find(x => clave(x) === k); if (!i) return;
@@ -335,8 +382,12 @@ function linea(k, d){
 Object.assign(R.acciones, {
   'filtro': d => { S.filtro = d.id; renderMain(); },
   'abrir-prod': d => {
-    const p = prod(d.id), i = Math.max(0, p.presentaciones.findIndex(x => precioPaquete(p.id, x) != null));
-    S.sel = { prod:d.id, pres:i, cant:{}, q:'', manual:{} };
+    // Presentación por defecto: la medida habitual si el cliente tiene precio en ella; si no, la primera con su precio; si no, la habitual
+    const p = prod(d.id), hab = habitualDe(p.id), idx = f => p.presentaciones.findIndex(f);
+    let i = idx(x => x.medida_ml === hab && tienePrecio(p.id, x));
+    if (i < 0) i = idx(x => tienePrecio(p.id, x));
+    if (i < 0) i = idx(x => x.medida_ml === hab);
+    S.sel = { prod:d.id, pres:Math.max(0, i), cant:{}, q:'' };
     // Sin cliente no hay precios: primero se elige el cliente y luego se abre el producto
     if (!clienteActual()) return abrirHoja({ tipo:'clientes', volver:'producto' }, { q:'', propios: !!S.miVendedor, nuevo:'', tel:'' });
     abrirHoja({ tipo:'producto' });
@@ -357,6 +408,14 @@ Object.assign(R.acciones, {
     } catch (e) { S.enviando = false; S.error = e.message; renderHoja(); }
   },
   'pres': d => { S.sel.pres = +d.i; S.error = ''; renderHoja(); },
+  'usar-ref': d => { fijarManual(d.pres, String(d.v)); renderHoja(); },
+  'usar-habitual': d => {
+    const p = prod(d.producto), hab = habitualDe(p.id), i = p.presentaciones.findIndex(x => x.medida_ml === hab);
+    if (i < 0) return;
+    S.sel.pres = i;
+    if (!tienePrecio(p.id, p.presentaciones[i])) fijarManual(p.presentaciones[i].id, String(refDe(p.id, hab).comun));
+    renderHoja();
+  },
   'mas-color': d => { S.sel.cant[d.c] = (S.sel.cant[d.c] || 0) + 1; S.error = ''; renderHoja(); },
   'menos-color': d => { S.sel.cant[d.c] = Math.max(0, (S.sel.cant[d.c] || 0) - 1); renderHoja(); },
   'agregar': agregarAlCarrito,

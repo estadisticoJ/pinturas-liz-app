@@ -3,7 +3,7 @@
 import * as D from '../datos.js';
 import { S, R, esc, soles, hoyISO, fechaCorta, esRol, vacio, op, campo, toast, renderTodo, renderHoja, renderMain,
   abrirHoja, cab, errorHoja, botonEnviar, guardar, busqueda, sinAcentos, cargarModulo } from '../nucleo.js';
-import { elegirCliente } from './pedidos.js';
+import { elegirCliente, refDe, habitualDe } from './pedidos.js';
 import { abrirAviso } from './alertas.js';
 
 const editaDatos = () => esRol('socio','administrativo');
@@ -88,15 +88,23 @@ R.hojas.cliente = () => {
 /* ---------- Registrar o cambiar un precio (siempre de un cliente) ---------- */
 R.hojas.precio = () => {
   const g = S.g, c = S.clientes.find(x => x.id === g.cliente), socio = esRol('socio');
-  const medidas = medidasDe(g.producto);
+  const medidas = medidasDe(g.producto), hab = habitualDe(g.producto);
+  // Al cambiar de producto se propone su medida habitual
+  if (g.prodPrevio !== g.producto) { g.prodPrevio = g.producto; if (hab && medidas.includes(hab)) g.ml = hab; }
   if (g.ml !== 'otra' && !medidas.includes(Number(g.ml))) g.ml = medidas[0] ?? (socio ? 'otra' : '');
+  const ref = g.ml !== 'otra' ? refDe(g.producto, Number(g.ml)) : null, refHab = hab ? refDe(g.producto, hab) : null;
   const actual = g.ml !== 'otra' && g.vigentes?.find(p => p.producto_id === g.producto && p.medida_ml === Number(g.ml));
   const bloqueado = actual && !editaPrecios();
   return cab('Precio para ' + esc(c?.nombre || 'cliente'), 'Precio por docena') + `<div class="hoja-body"><div class="campos">
     ${campo('p-prod', 'Producto', `<select id="p-prod" data-g="producto" data-gr="1">${S.catalogo.map(p => op(p.id, p.nombre + (p.presentaciones.length ? '' : ' (sin medidas)'), g.producto)).join('')}</select>`)}
-    ${campo('p-ml', 'Medida', `<select id="p-ml" data-g="ml" data-gr="1">${medidas.map(m => op(m, m + ' ml', g.ml)).join('')}${socio ? op('otra', 'Otra medida…', g.ml) : ''}${!medidas.length && !socio ? '<option value="">Sin medidas</option>' : ''}</select>`)}
+    ${campo('p-ml', 'Medida', `<select id="p-ml" data-g="ml" data-gr="1">${medidas.map(m => op(m, m + ' ml' + (m === hab ? ' (habitual)' : ''), g.ml)).join('')}${socio ? op('otra', 'Otra medida…', g.ml) : ''}${!medidas.length && !socio ? '<option value="">Sin medidas</option>' : ''}</select>`)}
     ${g.ml === 'otra' ? campo('p-ml-nueva', 'Medida nueva (ml)', `<input id="p-ml-nueva" data-g="mlNueva" type="number" min="1" step="1" inputmode="numeric" value="${esc(g.mlNueva)}" placeholder="250">`) : ''}
     ${campo('p-precio', actual ? 'Precio nuevo por docena (S/)' : 'Precio por docena (S/)', `<input id="p-precio" data-g="precio" type="number" min="0.5" step="0.5" inputmode="decimal" value="${esc(g.precio)}" ${bloqueado ? 'disabled' : ''}>`)}
+    ${!bloqueado && (ref || refHab) ? `<div class="campo full"><span class="muted">${ref ? `Precio sugerido ${soles(ref.comun)}: es el que más clientes pagan (${ref.clientes} con precio; van de ${soles(ref.minimo)} a ${soles(ref.maximo)}).` : 'Esta medida aún no tiene precio sugerido.'}</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        ${ref ? `<button class="btn btn-s btn-sug" data-a="precio-ref" data-v="${ref.comun}">Usar sugerido ${soles(ref.comun)}</button>` : ''}
+        ${refHab && Number(g.ml) !== hab ? `<button class="btn btn-s btn-sug" data-a="precio-ref" data-ml="${hab}" data-v="${refHab.comun}">Medida habitual ${hab} ml · sugerido ${soles(refHab.comun)}</button>` : ''}
+      </div></div>` : ''}
     ${campo('p-desde', 'Rige desde', `<input id="p-desde" data-g="desde" type="date" min="${hoyISO()}" value="${esc(g.desde)}" ${bloqueado ? 'disabled' : ''}>`)}
     ${campo('p-nota', 'Motivo (opcional)', `<input id="p-nota" data-g="nota" maxlength="120" value="${esc(g.nota)}" placeholder="Acuerdo con el cliente, alza de insumos…" ${bloqueado ? 'disabled' : ''}>`, true)}
     </div>
@@ -144,13 +152,15 @@ Object.assign(R.acciones, {
     if (!vigentes) { try { vigentes = await D.preciosVigentes(cliente); } catch (e) { return toast(e.message); } }
     // "Agregar precio": propone el primer producto y medida que el cliente aún no tiene
     let producto = d.producto, ml = d.ml ? Number(d.ml) : null;
+    const libre = (pid, m) => m && !vigentes.some(v => v.producto_id === pid && v.medida_ml === m);
     if (!producto && d.nuevo) {
-      for (const p of S.catalogo) { const m = medidasDe(p.id).find(x => !vigentes.some(v => v.producto_id === p.id && v.medida_ml === x)); if (m) { producto = p.id; ml = m; break; } }
+      for (const p of S.catalogo) { const h = habitualDe(p.id), m = libre(p.id, h) ? h : medidasDe(p.id).find(x => libre(p.id, x)); if (m) { producto = p.id; ml = m; break; } }
     }
-    producto = producto || S.catalogo[0]?.id; if (ml == null) ml = medidasDe(producto)[0];
+    producto = producto || S.catalogo[0]?.id; if (ml == null) ml = habitualDe(producto) ?? medidasDe(producto)[0];
     const actual = vigentes.find(p => p.producto_id === producto && p.medida_ml === ml);
-    abrirHoja({ tipo:'precio', volver }, { cliente, producto, ml, mlNueva:'', precio: actual ? String(actual.precio_docena) : '', desde: hoyISO(), nota:'', vigentes });
+    abrirHoja({ tipo:'precio', volver }, { cliente, producto, prodPrevio: producto, ml, mlNueva:'', precio: actual ? String(actual.precio_docena) : '', desde: hoyISO(), nota:'', vigentes });
   },
+  'precio-ref': d => { if (d.ml) S.g.ml = d.ml; S.g.precio = String(d.v); S.error = ''; renderHoja(); },
   'precio-guardar': () => {
     const g = S.g, precio = Number(g.precio), nueva = g.ml === 'otra', ml = nueva ? Number(g.mlNueva) : Number(g.ml);
     if (!(ml > 0) || !Number.isInteger(ml)) { S.error = nueva ? 'Escribe la medida nueva en ml (número entero).' : 'Este producto no tiene medidas registradas.'; return renderHoja(); }
