@@ -1,5 +1,6 @@
 // Módulo Pedidos: catálogo, carrito, lista con estados y consolidado.
 import * as D from '../datos.js';
+import { fotoDe } from '../nucleo.js';
 import { S, R, $, esc, soles, hoyISO, fechaCorta, horaCorta, rol, miRol, esRol, guarda, lee, sw, vacio, op, campo,
   toast, renderTodo, renderNav, renderMain, renderHoja, abrirHoja, cab, errorHoja, botonEnviar, busqueda, sinAcentos, cargarModulo } from '../nucleo.js';
 
@@ -142,7 +143,8 @@ function vistaCatalogo(){
     const sws = p.colores.slice(0, 8).map(c => `<span class="sw" style="background:${esc(c.hex)}" title="${esc(c.nombre)}"></span>`).join('') + (p.colores.length > 8 ? `<span class="muted" style="font-size:12px">+${p.colores.length - 8}</span>` : '');
     const sinMedidas = !p.presentaciones.length;
     if (sinMedidas && !esRol('socio')) return '';
-    return `<article class="card"><div class="card-img">${frascos(p.colores.map(c => c.hex))}</div><div class="card-body">
+    const foto = fotoDe(p.nombre);
+    return `<article class="card"><div class="card-img${foto ? ' con-foto' : ''}">${foto ? `<img src="${foto}" alt="${esc(p.nombre)}" loading="lazy" decoding="async">` : frascos(p.colores.map(c => c.hex))}</div><div class="card-body">
       <span class="eyebrow">${esc(p.linea)}</span><h3>${esc(p.nombre)}</h3>${p.descripcion ? `<p class="desc">${esc(p.descripcion)}</p>` : ''}
       <div class="sw-row">${sws}</div>
       <p class="price num">${sinMedidas ? '<small>Sin medidas ni precio</small>' : desde != null ? `Desde ${soles(desde)} <small>la docena · ${ml} ml</small>` : guia || `<small>Sin precio · ${ml} ml</small>`}</p>
@@ -189,7 +191,9 @@ R.hojas.producto = () => {
       <p><strong>${esc(c.nombre)} no tiene precio para ${pr.medida_ml} ml.</strong> Escribe el precio por docena acordado o usa el sugerido. Quedará como su precio para los próximos pedidos.</p>
       ${cajaPrecio(p, pr, false)}
       ${hab && hab !== pr.medida_ml && refDe(p.id, hab) && p.presentaciones.some(x => x.medida_ml === hab) ? `<button class="btn btn-s btn-sug" data-a="usar-habitual" data-producto="${p.id}">Usar la medida habitual: ${hab} ml · sugerido ${soles(refDe(p.id, hab).comun)}</button>` : ''}</div>` : '<p class="muted">Este cliente no tiene precio para esta medida.</p>') : '';
+  const foto = fotoDe(p.nombre);
   return cab(esc(p.nombre), c ? `Precios de ${esc(c.nombre)}` : 'Elige un cliente para ver precios') + `<div class="hoja-body">
+    ${foto ? `<div class="foto-producto"><img src="${foto}" alt="${esc(p.nombre)}"></div>` : ''}
     ${!c ? `<div class="cliente-bar compacto"><div><strong>Sin cliente</strong><span class="muted">Elige a quién le vendes para ver sus precios.</span></div><button class="btn btn-p btn-s" data-a="elegir-cliente">Elegir cliente</button></div>` : ''}
     <div><p class="sub">Presentación</p><div class="pres" data-vivo="pres">${p.presentaciones.map((x, i) => { const v = precioPaquete(p.id, x), d = docenaDe(p.id, x), propio = tienePrecio(p.id, x), ref = refDe(p.id, x.medida_ml);
       return `<button data-a="pres" data-i="${i}" aria-pressed="${i === S.sel.pres}"><span>${x.medida_ml} ml · ${paquete(x.unidades)}${x.medida_ml === hab ? ' <small class="chip">habitual</small>' : ''}</span><span class="num">${v != null ? soles(v) + (x.unidades !== 12 ? ` <small class="muted">(${soles(d)} docena)</small>` : '') + (propio ? '' : ' <small class="muted">a mano</small>') : `<small class="muted">${ref ? 'Sugerido ' + soles(ref.comun) : 'Sin precio'}</small>`}</span></button>`; }).join('')}</div>

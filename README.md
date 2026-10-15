@@ -74,6 +74,8 @@ Vuelve con todos sus datos en unos minutos. Para no depender de esto, el plan Pr
 | `src/datos.js` | Todas las llamadas a Supabase |
 | `src/modulos/` | Un archivo por módulo: `pedidos`, `clientes`, `cobranzas`, `produccion`, `taller`, `almacen`, `alertas`, `usuarios` |
 | `src/estilos.css` | Estilos |
+| `src/productos/` | Fotos de los productos para el catálogo. Su `LEEME.md` dice cómo nombrar cada archivo |
+| `HISTORIAL_VERSIONES.md` | Qué trajo cada versión y cómo se numeran |
 | `public/` | Íconos de la aplicación instalable |
 | `supabase/migrations/` | Cambios de base de datos, numerados. Se ejecutan en orden y una sola vez cada uno |
 | `supabase/semillas/` | Datos de ejemplo para pruebas y el script del primer socio |
@@ -101,7 +103,7 @@ Cada versión llega como un .zip con la carpeta `pinturas-liz-app` completa. Sig
 
 1. Descomprime el .zip nuevo en una carpeta temporal (por ejemplo, el Escritorio).
 2. Copia **todo el contenido** de la carpeta `pinturas-liz-app` nueva y pégalo dentro de tu carpeta de trabajo
-   (`D:\Proyectos\pinturas-liz-app-v0.2.0\pinturas-liz-app`). Cuando Windows pregunte, elige **Reemplazar los archivos**.
+   (`D:\Proyectos\pinturas-liz-app`). Cuando Windows pregunte, elige **Reemplazar los archivos**.
    - No borres tu carpeta: dentro está la carpeta oculta `.git`, que conecta con GitHub.
    - El .zip no trae `.env` ni `node_modules`, así que no los toca.
 3. Abre esa carpeta en VS Code. En el panel **Source Control** (ícono de ramas, a la izquierda) verás los archivos cambiados.
@@ -112,9 +114,13 @@ En la terminal de VS Code (**Terminal > New Terminal**):
 
 ```bash
 git add .
-git commit -m "Versión 0.4.2: precio sugerido, novedades y colores de la marca"
+git commit -m "Versión 0.5.0: fotos de productos en el catálogo"
 git push
+git tag v0.5.0
+git push --tags
 ```
+
+La etiqueta (`git tag`) marca la versión en GitHub (pestaña *Tags*), para poder volver a ella si hace falta.
 
 O sin terminal: en **Source Control** escribe el mensaje, pulsa **Commit** y luego **Sync Changes**.
 
@@ -224,7 +230,13 @@ ejecutar la carga, porque duplicaría clientes.
 - En cada alerta se conversa con comentarios. Solo un socio la marca como **resuelta** (o la reabre).
   Las de *Falta precio* y *Producto sin precio* se resuelven solas al registrar el precio.
 
-## 7. Seguridad
+## 7. Fotos de productos
+
+Las fotos van en `src/productos/`, una por producto, con el nombre del producto en minúsculas, sin tildes y con
+guiones: *Mate FLT* → `mate-flt.webp`. La lista completa de nombres está en `src/productos/LEEME.md`.
+Al subir los cambios a GitHub, la app las muestra sola en el catálogo y en la hoja del producto.
+
+## 8. Seguridad
 
 - La clave *publishable* es pública por diseño; lo que protege los datos son las reglas de las migraciones.
 - Nunca pongas la clave **secret** (`sb_secret_...`) en GitHub ni en la aplicación.
@@ -232,7 +244,9 @@ ejecutar la carga, porque duplicaría clientes.
 
 ---
 
-## 8. Versiones
+## 9. Versiones
+
+La historia detallada está en `HISTORIAL_VERSIONES.md`.
 
 | Versión | Migraciones a ejecutar | Cambios |
 | --- | --- | --- |
@@ -241,3 +255,4 @@ ejecutar la carga, porque duplicaría clientes.
 | 0.4.0 | 0004, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` | Datos reales: 302 clientes, 42 productos, 423 colores y 2.079 precios. Precios por docena con vigencia e historial. Módulo Clientes. Vendedores vinculados a usuarios |
 | 0.4.1 | (0004 si no la ejecutaste) 0005, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` nuevos | Carga desde el Excel corregido: precios repetidos como historial 2025 → 2026, productos nuevos sin código, sin precios en cero. Sin precios de lista: precio escrito a mano para clientes nuevos o sin precio. Solo socios agregan medidas. Alertas con comentarios para socios |
 | 0.4.2 | **0006** | Precio sugerido (moda) y medida habitual con botones para usarlos. Novedades para socios y Administración (clientes y precios nuevos). El carrito se recalcula al cambiar de cliente. Colores y logo de la marca. La app se actualiza sola en cada celular y muestra su versión en *Mi cuenta* |
+| 0.5.0 | — | Fotos de productos en el catálogo (carpeta `src/productos`). Historial de versiones |

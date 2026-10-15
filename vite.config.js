@@ -32,7 +32,13 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png}'],
+        // Las fotos de productos no se descargan todas al instalar: se guardan al verlas por primera vez
+        globPatterns: ['**/*.{js,css,html,svg}', '*.png'],
+        runtimeCaching: [{
+          urlPattern: /\/assets\/.*\.(webp|png|jpe?g)$/i,
+          handler: 'CacheFirst',
+          options: { cacheName: 'fotos-productos', expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 90 } }
+        }],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true

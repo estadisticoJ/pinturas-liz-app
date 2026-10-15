@@ -61,6 +61,12 @@ export function selectorProducto(g, conPresentacion){
     + campo('g-color', 'Color', `<select id="g-color" data-g="color" data-gr="1">${p.colores.map(c => op(c.id, c.nombre, g.color)).join('')}</select>`)
     + (conPresentacion ? campo('g-pres', 'Presentación', `<select id="g-pres" data-g="presentacion" data-gr="1">${p.presentaciones.map(x => op(x.id, `${x.medida_ml} ml · bolsa de ${x.unidades}`, g.presentacion)).join('')}</select>`) : '');
 }
+// Fotos de productos: archivos en src/productos/ con el nombre del producto en minúsculas, sin tildes
+// y con guiones en vez de espacios (Mate FLT -> mate-flt.webp). Al publicar se incluyen solas.
+const FOTOS = Object.fromEntries(Object.entries(import.meta.glob('./productos/*.{webp,png,jpg,jpeg}', { eager:true, query:'?url', import:'default' }))
+  .map(([ruta, url]) => [ruta.split('/').pop().replace(/\.[a-z]+$/i, '').toLowerCase(), url]));
+export const nombreArchivo = nombre => sinAcentos(nombre).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+export const fotoDe = nombre => FOTOS[nombreArchivo(nombre)] || null;
 export function nombreColor(colorId){
   for (const p of S.catalogo) { const c = p.colores.find(x => x.id === colorId); if (c) return { producto:p.nombre, color:c.nombre, hex:c.hex }; }
   return { producto:'', color:'', hex:'#CCCCCC' };

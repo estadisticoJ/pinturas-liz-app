@@ -241,3 +241,11 @@ details summary{cursor:pointer}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .txt-alerta{color:var(--danger);font-weight:700}
 @media (max-width:520px){ .top .brand .nombre-marca{display:none} .logo{height:36px} }
+
+/* 0.5.0 · Fotos de productos */
+.card-img{height:150px;align-items:center}
+.card-img svg{max-height:100%}
+.card-img.con-foto{background:#fff;padding:8px}
+.card-img.con-foto img{max-height:100%;max-width:100%;object-fit:contain;display:block}
+.foto-producto{background:#fff;border-radius:var(--r);border:1px solid var(--line);display:flex;justify-content:center;padding:8px}
+.foto-producto img{max-height:200px;max-width:100%;object-fit:contain}
