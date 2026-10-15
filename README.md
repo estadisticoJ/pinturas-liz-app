@@ -114,9 +114,9 @@ En la terminal de VS Code (**Terminal > New Terminal**):
 
 ```bash
 git add .
-git commit -m "Versión 0.5.0: fotos de productos en el catálogo"
+git commit -m "Versión 0.6.0: pedidos por unidades, modificación y revisión"
 git push
-git tag v0.5.0
+git tag v0.6.0
 git push --tags
 ```
 
@@ -230,13 +230,22 @@ ejecutar la carga, porque duplicaría clientes.
 - En cada alerta se conversa con comentarios. Solo un socio la marca como **resuelta** (o la reabre).
   Las de *Falta precio* y *Producto sin precio* se resuelven solas al registrar el precio.
 
-## 7. Fotos de productos
+## 7. Pedidos: unidades, revisión y cobros
+
+- Se pide por **docenas o unidades**; el precio sale de la docena (÷ 12 por frasco). El Taller junta los colores
+  de un mismo producto y medida en bolsas de 12 (hasta 120 ml) o de 6 (250 ml); el pedido muestra el empaque.
+- **Recibido → (En revisión) → En taller → Listo → Despachado → Entregado.** Socios y Administración pueden
+  modificar, anular o enviar a revisión antes del Taller; el Taller puede pedir revisión y la ve Administración.
+  Quien debe corregir ve una alerta roja arriba de la pantalla hasta que reenvía el pedido.
+- **Cobros:** contado y crédito al estar Entregado; **adelanto** desde que el pedido pasa al Taller.
+
+## 8. Fotos de productos
 
 Las fotos van en `src/productos/`, una por producto, con el nombre del producto en minúsculas, sin tildes y con
 guiones: *Mate FLT* → `mate-flt.webp`. La lista completa de nombres está en `src/productos/LEEME.md`.
 Al subir los cambios a GitHub, la app las muestra sola en el catálogo y en la hoja del producto.
 
-## 8. Seguridad
+## 9. Seguridad
 
 - La clave *publishable* es pública por diseño; lo que protege los datos son las reglas de las migraciones.
 - Nunca pongas la clave **secret** (`sb_secret_...`) en GitHub ni en la aplicación.
@@ -244,7 +253,7 @@ Al subir los cambios a GitHub, la app las muestra sola en el catálogo y en la h
 
 ---
 
-## 9. Versiones
+## 10. Versiones
 
 La historia detallada está en `HISTORIAL_VERSIONES.md`.
 
@@ -256,3 +265,4 @@ La historia detallada está en `HISTORIAL_VERSIONES.md`.
 | 0.4.1 | (0004 si no la ejecutaste) 0005, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` nuevos | Carga desde el Excel corregido: precios repetidos como historial 2025 → 2026, productos nuevos sin código, sin precios en cero. Sin precios de lista: precio escrito a mano para clientes nuevos o sin precio. Solo socios agregan medidas. Alertas con comentarios para socios |
 | 0.4.2 | **0006** | Precio sugerido (moda) y medida habitual con botones para usarlos. Novedades para socios y Administración (clientes y precios nuevos). El carrito se recalcula al cambiar de cliente. Colores y logo de la marca. La app se actualiza sola en cada celular y muestra su versión en *Mi cuenta* |
 | 0.5.0 | — | Fotos de productos en el catálogo (carpeta `src/productos`). Historial de versiones |
+| 0.6.0 | **0007** y luego **0008** | Pedidos por docenas o unidades, empaque, fecha de vencimiento manual, modificar pedidos, estado En revisión con alerta urgente, pago por adelanto |

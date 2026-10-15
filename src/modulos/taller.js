@@ -1,6 +1,7 @@
 // Módulo Taller de Envasado: qué falta envasar, registro de envasados, órdenes al Laboratorio
 // y materiales que consume cada bolsa.
 import * as D from '../datos.js';
+import { cantidad } from '../nucleo.js';
 import { S, R, esc, num, fechaCorta, toast, codigo, esRol, sw, vacio, op, campo, renderTodo, renderHoja, abrirHoja, cab,
   errorHoja, botonEnviar, guardar, selectorProducto, nombreColor } from '../nucleo.js';
 import { pillOrden } from './produccion.js';
@@ -33,12 +34,12 @@ function vistaPorEnvasar(d){
   if (!d.porEnvasar.length) return vacio('No hay pedidos pendientes de envasar', 'Aquí aparecen los pedidos en Recibido y En taller, descontando lo que ya está envasado.', puedeEnvasar() ? '<button class="btn btn-p" data-a="tal-envasar">Registrar envasado para stock</button>' : '');
   const falta = d.porEnvasar.filter(f => f.faltan_bolsas > 0);
   return `<div class="bloque">
-    <p class="resumen num"><span>${falta.length} de ${d.porEnvasar.length} líneas por envasar</span><span>Faltan ${falta.reduce((t, f) => t + f.faltan_bolsas, 0)} bolsas</span><span>Granel necesario ${num(falta.reduce((t, f) => t + f.litros_necesarios, 0), 3)} L</span></p>
+    <p class="resumen num"><span>${falta.length} de ${d.porEnvasar.length} líneas por envasar</span><span>Envasar ${falta.reduce((t, f) => t + f.faltan_bolsas, 0)} bolsas</span><span>Granel necesario ${num(falta.reduce((t, f) => t + f.litros_necesarios, 0), 3)} L</span></p>
     <p class="muted">Pedidos en Recibido y En taller, comparados con el producto ya envasado y el granel que hay en el Taller.</p>
-    <div class="tabla-w"><table><thead><tr><th>Producto</th><th>Presentación</th><th class="r">Pedido</th><th class="r">Envasado</th><th class="r">Faltan</th><th class="r">Granel necesario</th><th class="r">Granel en Taller</th><th></th></tr></thead><tbody>
+    <div class="tabla-w"><table><thead><tr><th>Producto</th><th>Presentación</th><th class="r">Pedido</th><th class="r">Envasado</th><th class="r">Faltan</th><th class="r">Bolsas a envasar</th><th class="r">Granel necesario</th><th class="r">Granel en Taller</th><th></th></tr></thead><tbody>
     ${d.porEnvasar.map(f => { const corto = f.faltan_bolsas > 0 && f.granel_disponible < f.litros_necesarios;
-      return `<tr><td>${sw(f.hex)} ${esc(f.producto)} · ${esc(f.color)}</td><td class="num">${f.medida_ml} ml · ${f.unidades}</td><td class="r num">${f.bolsas}</td><td class="r num">${num(f.envasado_disponible)}</td>
-        <td class="r num"><strong>${num(f.faltan_bolsas)}</strong></td><td class="r num">${num(f.litros_necesarios, 3)} L</td><td class="r num ${corto ? 'txt-alerta' : ''}">${num(f.granel_disponible, 3)} L</td>
+      return `<tr><td>${sw(f.hex)} ${esc(f.producto)} · ${esc(f.color)}</td><td class="num">${f.medida_ml} ml · bolsa de ${f.unidades}</td><td class="r num">${cantidad(f.frascos)}</td><td class="r num">${num(f.envasado_disponible)} u</td>
+        <td class="r num">${cantidad(f.faltan_frascos)}</td><td class="r num"><strong>${num(f.faltan_bolsas)}</strong></td><td class="r num">${num(f.litros_necesarios, 3)} L</td><td class="r num ${corto ? 'txt-alerta' : ''}">${num(f.granel_disponible, 3)} L</td>
         <td><span style="display:flex;gap:6px">${f.faltan_bolsas > 0 && puedeEnvasar() && !corto ? `<button class="btn btn-s btn-p" data-a="tal-envasar" data-color="${f.color_id}" data-pres="${f.presentacion_id}" data-bolsas="${f.faltan_bolsas}">Envasar</button>` : ''}
           ${corto && puedePedir() ? `<button class="btn btn-s" data-a="tal-orden" data-color="${f.color_id}" data-litros="${Math.ceil((f.litros_necesarios - f.granel_disponible) * 10) / 10}">Pedir granel</button>` : ''}</span></td></tr>`; }).join('')}
     </tbody></table></div>

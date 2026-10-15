@@ -7,6 +7,8 @@ import { etiquetaCobro } from './pedidos.js';
 const MEDIOS = [['efectivo','Efectivo'],['transferencia','Transferencia'],['yape','Yape'],['plin','Plin'],['deposito','Depósito']];
 const nombreMedio = m => (MEDIOS.find(x => x[0] === m) || [m, m])[1];
 const recibo = n => 'R-' + String(n).padStart(5, '0');
+// Contado y crédito se cobran al estar Entregado; el adelanto, desde que el pedido pasa al Taller
+export const cobrable = s => s.estado === 'entregado' || (s.condicion === 'adelanto' && ['en_taller','listo','despachado'].includes(s.estado));
 const pedidoCod = n => 'P-' + String(n).padStart(5, '0');
 
 R.modulos.cobranzas = {
@@ -30,15 +32,15 @@ R.modulos.cobranzas = {
 
 function vistaPorCobrar(d){
   const hoy = hoyISO();
-  const lista = d.saldos.filter(s => s.saldo > 0.005 && ['despachado','entregado'].includes(s.estado));
-  if (!lista.length) return vacio('No hay saldos pendientes', 'Aquí aparecen los pedidos despachados o entregados que aún tienen saldo por cobrar.');
+  const lista = d.saldos.filter(s => s.saldo > 0.005 && cobrable(s));
+  if (!lista.length) return vacio('No hay saldos pendientes', 'Aquí aparecen los pedidos entregados con saldo, y los de adelanto desde que pasan al Taller.');
   const total = lista.reduce((t, s) => t + s.saldo, 0), vencidos = lista.filter(s => s.vence < hoy);
   return `<div class="bloque"><p class="resumen num"><span>${lista.length} pedidos con saldo</span><span>Por cobrar ${soles(total)}</span>${vencidos.length ? `<span class="txt-alerta">Vencido ${soles(vencidos.reduce((t, s) => t + s.saldo, 0))}</span>` : ''}</p>
     <div class="lista">${lista.map(s => {
       const atraso = s.vence < hoy ? diasDesde(s.vence) : 0;
       return `<article class="fila"><div><button class="link num" data-a="ver-pedido" data-id="${s.pedido_id}">${pedidoCod(s.numero)}</button> <span class="cli">· ${esc(s.cliente)}</span></div>
         ${atraso ? `<span class="pill st-anulado alerta">Vencido hace ${atraso} d</span>` : `<span class="pill st-recibido">Vence ${esc(fechaCorta(s.vence))}</span>`}
-        <div class="meta"><span>Total ${soles(s.total)}</span><span>Cobrado ${soles(s.cobrado)}</span><span>${s.condicion === 'credito' ? 'Crédito' : 'Contado'}</span><span>${esc(s.vendedor || '')}</span></div>
+        <div class="meta"><span>Total ${soles(s.total)}</span><span>Cobrado ${soles(s.cobrado)}</span><span>${s.condicion === 'credito' ? 'Crédito' : s.condicion === 'adelanto' ? 'Adelanto' : 'Contado'}</span><span>${esc(s.vendedor || '')}</span></div>
         <div class="pie"><strong class="num">Saldo ${soles(s.saldo)}</strong><button class="btn btn-s" data-a="cobrar" data-id="${s.pedido_id}">Registrar cobro</button></div></article>`;
     }).join('')}</div></div>`;
 }
@@ -64,7 +66,7 @@ function vistaClientes(d){
   const deuda = new Map(), vencida = new Map(), hoy = hoyISO();
   d.saldos.filter(s => s.saldo > 0.005).forEach(s => {
     deuda.set(s.cliente_id, (deuda.get(s.cliente_id) || 0) + s.saldo);
-    if (s.vence < hoy && ['despachado','entregado'].includes(s.estado)) vencida.set(s.cliente_id, (vencida.get(s.cliente_id) || 0) + s.saldo);
+    if (s.vence < hoy && cobrable(s)) vencida.set(s.cliente_id, (vencida.get(s.cliente_id) || 0) + s.saldo);
   });
   const lista = [...S.clientes].sort((a, b) => (deuda.get(b.id) || 0) - (deuda.get(a.id) || 0) || a.nombre.localeCompare(b.nombre));
   if (!lista.length) return vacio('Aún no hay clientes', 'Los clientes se crean al registrar un pedido.');

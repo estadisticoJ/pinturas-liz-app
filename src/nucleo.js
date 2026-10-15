@@ -37,6 +37,9 @@ export const hoyISO = () => { const d = new Date(); return d.getFullYear() + '-'
 export const fechaCorta = iso => { if (!iso) return ''; const [y,m,d] = iso.slice(0,10).split('-').map(Number); return new Date(y, m-1, d).toLocaleDateString('es-PE', { day:'numeric', month:'short' }); };
 export const horaCorta = iso => new Date(iso).toLocaleString('es-PE', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
 export const diasDesde = iso => { const [y,m,d] = iso.slice(0,10).split('-').map(Number); return Math.floor((Date.now() - new Date(y, m-1, d).getTime()) / 864e5); };
+// Frascos escritos como docenas y unidades: 20 -> "1 docena + 8 u", 24 -> "2 docenas", 6 -> "6 u"
+export const cantidad = f => { const n = Math.round(Number(f) || 0), d = Math.floor(n / 12), u = n % 12;
+  return [d ? d + (d === 1 ? ' docena' : ' docenas') : '', u ? u + ' u' : ''].filter(Boolean).join(' + ') || '0'; };
 export const codigo = (letra, n) => letra + '-' + String(n).padStart(5, '0');
 export const rol = () => ROLES[S.perfil?.rol] || ROLES.vendedor;
 export const miRol = () => S.perfil?.rol;
@@ -89,6 +92,7 @@ export function pintarShell(){
     <button class="icon-btn" id="btn-carrito" data-a="carrito" aria-label="Abrir carrito"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 4h2l2.4 11h10.2L20 7H6.2"/><circle cx="9" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg><span class="badge num" id="carrito-n">0</span></button>
   </div></header>
   <div class="wrap page">
+    <div class="urgente" id="urgente" role="alert" hidden></div>
     <div class="tabs" id="subnav" role="tablist" aria-label="Vistas del módulo"></div>
     <div class="search" id="barra"><select id="linea" aria-label="Línea de producto"></select><input id="buscar" type="search" autocomplete="off" aria-label="Buscar"></div>
     <main id="main"></main>
@@ -124,7 +128,8 @@ export function renderNav(){
   $('#barra').hidden = !barra;
   if (barra) { $('#linea').hidden = !barra.linea; $('#buscar').placeholder = barra.placeholder; if (document.activeElement !== $('#buscar')) $('#buscar').value = busqueda(); }
   $('#btn-carrito').hidden = !r.crea;
-  $('#carrito-n').textContent = S.carrito.reduce((t, i) => t + i.cant, 0);
+  $('#carrito-n').textContent = S.carrito.length;
+  if (R.pintarUrgente) R.pintarUrgente();
   const nAv = S.alertasN + S.novedadesN;
   $('#alertas-n').hidden = !nAv; $('#alertas-n').textContent = nAv > 99 ? '99+' : nAv;
   $('#btn-alertas').setAttribute('aria-label', `Alertas y novedades${S.alertasN ? ` · ${S.alertasN} alertas abiertas` : ''}${S.novedadesN ? ` · ${S.novedadesN} novedades` : ''}`);

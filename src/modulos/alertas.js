@@ -16,7 +16,9 @@ export const TIPOS = {
   cliente_incompleto:  'Clientes incompletos',
   cliente_nuevo:       'Cliente nuevo',
   dato_excel:          'Dato del Excel',
-  aviso:               'Aviso de un usuario'
+  aviso:               'Aviso de un usuario',
+  pedido_revision:     'Pedido en revisión',
+  pedido_corregido:    'Pedido corregido'
 };
 const nombreTipo = t => TIPOS[t] || t;
 const origen = a => a.origen === 'carga' ? 'Carga del Excel' : a.autor?.nombre || 'Sistema';
@@ -29,11 +31,22 @@ const NOMBRE_NOVEDAD = { cliente_nuevo:'Cliente nuevo', precio_nuevo:'Precio nue
 
 export async function refrescarContador(){
   try {
-    const [a, n] = await Promise.all([D.contarAlertas(), veNovedades() ? D.contarNovedades(vistoDesde(), S.perfil.id) : 0]);
+    const [a, n, u] = await Promise.all([D.contarAlertas(), veNovedades() ? D.contarNovedades(vistoDesde(), S.perfil.id) : 0, D.alertasUrgentes()]);
     S.alertasN = a; S.novedadesN = n;
+    // Urgentes para mí: dirigidas a mí o a mi perfil (los socios también ven las de Administración)
+    S.urgentes = u.filter(x => x.para === S.perfil.id || x.para_rol === S.perfil.rol || (x.para_rol === 'administrativo' && esRol('socio')));
   } catch (e) { /* sin conexión: se intenta luego */ }
   renderNav();
 }
+
+// Franja roja arriba de cada pantalla con las alertas de alta prioridad (por ejemplo, un pedido para corregir)
+R.pintarUrgente = () => {
+  const el = document.getElementById('urgente'); if (!el) return;
+  const u = S.urgentes || [];
+  el.hidden = !u.length;
+  el.innerHTML = u.map(a => `<div class="urgente-item"><div class="t"><strong>${esc(a.titulo)}</strong><span>${esc(a.detalle || '')}</span></div>
+    ${a.pedido_id ? `<button class="btn btn-s btn-p" data-a="ver-pedido" data-id="${a.pedido_id}">Ver pedido</button>` : ''}</div>`).join('');
+};
 
 R.modulos.alertas = {
   nombre:'Alertas', oculto:true,
@@ -110,6 +123,7 @@ R.hojas.alerta = () => {
   const acciones = [
     a.cliente_id && esRol('socio','administrativo','vendedor') ? `<button class="btn btn-s" data-a="al-cliente" data-id="${a.cliente_id}">Ver cliente</button>` : '',
     precioDe && esRol('socio','administrativo') ? `<button class="btn btn-s" data-a="al-precio">Registrar precio</button>` : '',
+    a.pedido_id ? `<button class="btn btn-s" data-a="ver-pedido" data-id="${a.pedido_id}">Ver pedido</button>` : '',
     a.tipo === 'producto_sin_precio' && socio && a.producto_id ? `<button class="btn btn-s" data-a="medida-nueva" data-producto="${a.producto_id}">Agregar medida</button>` : ''
   ].filter(Boolean).join('');
   return cab(esc(a.titulo), esc(nombreTipo(a.tipo) + ' · ' + (a.estado === 'resuelta' ? 'Resuelta' : 'Abierta'))) + `<div class="hoja-body">

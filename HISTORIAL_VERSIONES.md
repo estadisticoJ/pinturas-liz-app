@@ -23,6 +23,31 @@ Cada versión indica qué hay que ejecutar en Supabase. Las migraciones se ejecu
 
 ---
 
+## 0.6.0 · Pedidos por unidades, modificación y revisión · 16/10/2026
+
+**Tipo:** menor (funciones nuevas).
+**Supabase:** `0007_estados_nuevos.sql` y luego `0008_unidades_revision.sql` (en ese orden, cada uno por separado).
+
+- **Docenas o unidades.** Al elegir un producto se elige la medida (con su precio por docena), luego *Docenas* o *Unidades* y después los colores.
+  - El precio se calcula por frasco: docena ÷ 12. Por ejemplo, 6 u de Mate 120 ml a S/ 34 la docena = S/ 17.
+  - Las líneas guardan frascos y se muestran como «1 docena + 8 u».
+- **Empaque.** Cada pedido muestra cómo lo arma el Taller: los colores de un mismo producto y medida se juntan en bolsas llenas y una bolsa con el resto. Las bolsas son de 12 hasta 120 ml y de 6 en 250 ml.
+- **Taller y almacén en frascos.** «Por envasar» muestra frascos pendientes y bolsas a envasar. El almacén de producto envasado cuenta frascos; lo anterior se convirtió solo.
+- **Fecha de vencimiento manual.** Además de 7, 15 y 30 días, el crédito acepta «Otra fecha».
+- **Modificar pedidos** antes del Taller:
+  - Socios y Administración siempre.
+  - Quien lo registró, mientras esté *Recibido* o cuando se lo devuelvan a revisión.
+  - Las líneas que siguen conservan su precio, y cada cambio queda en el seguimiento.
+- **Revisión.** Nuevo estado *En revisión*, con motivo escrito a mano.
+  - Socios y Administración la piden en *Recibido*.
+  - El Taller la pide en *En taller*, y primero la ve Administración.
+  - Quien debe corregir recibe una **alerta urgente** (franja roja arriba). Corrige y pulsa «Corregido, reenviar».
+  - Los pedidos en revisión no se suman al consolidado del Taller.
+- **Forma de pago «Adelanto».**
+  - Contado y crédito se cobran cuando el pedido está *Entregado*.
+  - El adelanto se registra desde que el pedido pasa al Taller; también lo registran los vendedores.
+  - Un pedido recién registrado solo muestra Repetir, Modificar, Anular y Enviar a revisión.
+
 ## 0.5.0 · Fotos de productos en el catálogo · 15/10/2026
 
 **Tipo:** menor (función nueva).

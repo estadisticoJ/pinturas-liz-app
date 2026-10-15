@@ -106,7 +106,7 @@ export async function crearPresentacion(producto, medida, unidades = 12) {
 }
 
 /* ---------- Alertas para socios ---------- */
-const SELECT_ALERTA = `id, tipo, titulo, detalle, cliente_id, producto_id, medida_ml, origen, estado, creado, resuelta_en,
+const SELECT_ALERTA = `id, tipo, titulo, detalle, cliente_id, producto_id, medida_ml, pedido_id, prioridad, origen, estado, creado, resuelta_en,
   cliente:clientes!alertas_cliente_id_fkey(nombre, codigo),
   producto:productos!alertas_producto_id_fkey(nombre),
   autor:perfiles!alertas_creado_por_fkey(nombre),
@@ -116,6 +116,11 @@ export async function alertas(estado) {
   const filas = revisar(await supabase.from('alertas').select(SELECT_ALERTA).eq('estado', estado)
     .order('creado', { ascending: false }).limit(500));
   return filas.map(a => ({ ...a, nComentarios: a.comentarios?.[0]?.count || 0 }));
+}
+// Alertas urgentes dirigidas a mí o a mi perfil (por ejemplo, un pedido devuelto a revisión)
+export async function alertasUrgentes() {
+  return revisar(await supabase.from('alertas').select('id, titulo, detalle, pedido_id, para, para_rol, creado')
+    .eq('estado', 'abierta').eq('prioridad', 'alta').order('creado', { ascending: false }).limit(20));
 }
 export async function contarAlertas() {
   const { count, error } = await supabase.from('alertas').select('id', { count: 'exact', head: true }).eq('estado', 'abierta');
@@ -138,30 +143,33 @@ export async function resolverAlerta(id, resuelta, comentario) {
 }
 
 /* ---------- Pedidos ---------- */
-const SELECT_PEDIDO = `id, numero, canal, condicion, dias_credito, entrega, agencia, fecha_entrega, notas, estado, total, creado, creado_por,
+const SELECT_PEDIDO = `id, numero, canal, condicion, dias_credito, fecha_vence, entrega, agencia, fecha_entrega, notas, estado, total, creado, creado_por,
+  cliente_id, revision_motivo, revision_para, revision_en, revisor:perfiles!pedidos_revision_por_fkey(nombre),
   cliente:clientes!pedidos_cliente_id_fkey(nombre, telefono),
   creador:perfiles!pedidos_creado_por_fkey(nombre),
-  items:pedido_items!pedido_items_pedido_id_fkey(bolsas, precio, color_id, presentacion_id,
+  items:pedido_items!pedido_items_pedido_id_fkey(frascos, precio_docena, importe, producto_id, color_id, presentacion_id,
     producto:productos!pedido_items_producto_id_fkey(nombre),
     color:colores!pedido_items_color_id_fkey(nombre, hex),
     presentacion:presentaciones!pedido_items_presentacion_id_fkey(medida_ml, unidades)),
-  historial:pedido_historial!pedido_historial_pedido_id_fkey(estado, cuando,
+  historial:pedido_historial!pedido_historial_pedido_id_fkey(estado, cuando, nota,
     por:perfiles!pedido_historial_por_fkey(nombre))`;
 
 function normalizar(p) {
   return {
     id: p.id, numero: p.numero, codigo: 'P-' + String(p.numero).padStart(5, '0'), creado: p.creado, creadoPor: p.creado_por,
     creadoPorNombre: p.creador?.nombre || '—',
-    cliente: { nombre: p.cliente?.nombre || '—', telefono: p.cliente?.telefono || '' },
-    canal: p.canal, condicion: p.condicion, diasCredito: p.dias_credito, entrega: p.entrega, agencia: p.agencia || '',
+    cliente: { id: p.cliente_id, nombre: p.cliente?.nombre || '—', telefono: p.cliente?.telefono || '' },
+    canal: p.canal, condicion: p.condicion, diasCredito: p.dias_credito, fechaVence: p.fecha_vence, entrega: p.entrega, agencia: p.agencia || '',
+    revision: p.estado === 'en_revision' ? { motivo: p.revision_motivo, para: p.revision_para, en: p.revision_en, por: p.revisor?.nombre || '—' } : null,
     fechaEntrega: p.fecha_entrega, notas: p.notas || '', estado: p.estado, total: Number(p.total),
     items: (p.items || []).map(i => ({
       nombre: i.producto?.nombre || '', color: i.color?.nombre || '', hex: i.color?.hex || '#CCCCCC',
       color_id: i.color_id, presentacion_id: i.presentacion_id,
-      ml: i.presentacion?.medida_ml, und: i.presentacion?.unidades, precio: Number(i.precio), cant: i.bolsas
+      producto_id: i.producto_id, ml: i.presentacion?.medida_ml, und: i.presentacion?.unidades,
+      frascos: i.frascos, docena: Number(i.precio_docena), importe: Number(i.importe)
     })),
     historial: (p.historial || []).sort((a, b) => a.cuando.localeCompare(b.cuando))
-      .map(h => ({ estado: h.estado, cuando: h.cuando, por: h.por?.nombre || '—' }))
+      .map(h => ({ estado: h.estado, cuando: h.cuando, nota: h.nota || '', por: h.por?.nombre || '—' }))
   };
 }
 export async function pedidos() {
@@ -169,6 +177,9 @@ export async function pedidos() {
   return filas.map(normalizar);
 }
 export async function crearPedido(pedido, items) { return revisar(await supabase.rpc('crear_pedido', { pedido, items })); }
+export async function editarPedido(id, pedido, items) { revisar(await supabase.rpc('editar_pedido', { p_pedido: id, pedido, items })); }
+export async function enviarRevision(id, motivo) { revisar(await supabase.rpc('enviar_revision', { p_pedido: id, p_motivo: motivo })); }
+export async function reenviarPedido(id, nota) { revisar(await supabase.rpc('reenviar_pedido', { p_pedido: id, p_nota: nota || null })); }
 export async function cambiarEstado(id, estado) {
   revisar(await supabase.from('pedidos').update({ estado }).eq('id', id).select('id').single());
 }
@@ -236,7 +247,7 @@ export async function entregarLote(id) { revisar(await supabase.rpc('entregar_lo
 /* ---------- Taller ---------- */
 export async function porEnvasar() {
   return revisar(await supabase.from('por_envasar').select('*').order('producto')).map(f => ({ ...f,
-    bolsas: Number(f.bolsas), envasado_disponible: Number(f.envasado_disponible), faltan_bolsas: Number(f.faltan_bolsas),
+    frascos: Number(f.frascos), envasado_disponible: Number(f.envasado_disponible), faltan_frascos: Number(f.faltan_frascos), faltan_bolsas: Number(f.faltan_bolsas),
     litros_necesarios: Number(f.litros_necesarios), granel_disponible: Number(f.granel_disponible) }));
 }
 export async function envasados() {
