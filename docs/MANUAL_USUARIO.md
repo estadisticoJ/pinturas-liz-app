@@ -1,11 +1,11 @@
 ---
 title: "Manual de usuario · Sistema Pinturas Liz"
-subtitle: "Versión 0.7.0 · octubre 2026"
+subtitle: "Versión 0.8.0 · octubre 2026"
 ---
 
 # Manual de usuario
 
-**Sistema Pinturas Liz · versión 0.7.0**
+**Sistema Pinturas Liz · versión 0.8.0**
 
 Este manual explica qué hace la aplicación, qué puede hacer cada perfil y cómo se hace cada tarea.
 Corresponde a la versión que aparece en *Mi cuenta*. La historia completa de versiones está en
@@ -15,19 +15,15 @@ Dirección de la aplicación: **https://estadisticoj.github.io/pinturas-liz-app/
 
 ---
 
-## Novedades de esta versión (0.7.0)
+## Novedades de esta versión (0.8.0)
 
-- **Perfil Desarrollador:** puede todo lo que puede un socio y recibe las sugerencias de mejora.
-- **Taller** ahora también despacha y marca *Entregado*. **Despacho** solo despacha y entrega.
-- **Administración** también marca *Listo* y *Despacha*.
-- **El vendedor:**
-  - marca *Entregado* sus pedidos despachados y así puede cobrar contra entrega;
-  - edita los datos de sus clientes.
-- Todo cambio en clientes y precios llega a socios, Administración y Desarrollador como **Novedad**.
-- En *Mi cuenta*:
-  - **cambiar contraseña**;
-  - **manual** y **guía rápida** del perfil;
-  - **sugerir una mejora**.
+- **Nuevo módulo Análisis** (socios, Desarrollador y Administración): un resumen con números y gráficos de
+  pedidos y sus estados, ventas por vendedor, canal, cliente y producto, cobranzas generales y por cliente,
+  producción histórica, envasado y almacenes. Ver la sección 12.
+- **Manual y guía rápida:** los botones de *Mi cuenta* ahora **abren el PDF** en una pestaña nueva. Desde ahí se
+  puede leer, descargar o imprimir.
+- **Datos de demostración** (solo para pruebas): pedidos, cobros, producción y envasados de ejemplo para ver
+  el módulo Análisis con números. Se borran antes de empezar a trabajar de verdad.
 
 ---
 
@@ -58,7 +54,8 @@ Se abre como cualquier aplicación y **se actualiza sola**.
 
 ![Mi cuenta](img/comun-mi-cuenta.png)
 
-- **Manual de usuario** y **Guía rápida de mi perfil** (PDF).
+- **Manual de usuario (PDF)** y **Guía rápida de mi perfil (PDF)**: se abren en una pestaña nueva, donde puedes
+  leerlos, descargarlos o imprimirlos. Para volver, cierra esa pestaña.
 - **Avisar un error de datos**: un dato falta o está mal (teléfono, precio, color…). Llega a los socios.
 - **Sugerir una mejora**: una idea para la app. Llega al Desarrollador.
 - **Cambiar contraseña**. Si la olvidas, pide a un socio o al Desarrollador que te pongan una nueva.
@@ -100,6 +97,7 @@ Una cuenta nueva queda **sin perfil** hasta que un socio o el Desarrollador se l
 | **Taller** | Por envasar, envasados, órdenes al Laboratorio y materiales por bolsa | Socio, Dev., Adm., Taller |
 | **Almacén** | Existencias y movimientos de los 5 almacenes y mínimos | Cada perfil ve los suyos |
 | **Campana** | Alertas y novedades | Todos (cada uno ve lo suyo) |
+| **Análisis** | Resumen con métricas y gráficos de pedidos, cobranzas, producción, taller y almacén | Socio, Dev., Adm. |
 | **Usuarios** | Asignar perfiles y vincular vendedores (en *Mi cuenta*) | Socio, Dev. |
 
 ## 4. Qué puede hacer cada perfil
@@ -165,6 +163,12 @@ pedir una revisión.
 | Granel Taller | Soc./Dev., Adm., Taller | Soc./Dev., Taller |
 | Materiales | Soc./Dev., Adm., Taller | Soc./Dev., Adm., Taller |
 | Producto envasado | Soc./Dev., Adm., Taller, Despacho | Soc./Dev., Taller |
+
+### Análisis
+
+| Acción | Soc./Dev. | Adm. | Vendedor | Taller | Despacho | Lab. |
+| --- | --- | --- | --- | --- | --- | --- |
+| Ver el módulo Análisis (todas sus pestañas) | ✔ | ✔ | — | — | — | — |
 
 ### Campana y cuentas
 
@@ -338,11 +342,39 @@ Cinco almacenes:
 A mano se registran **compras**, **salidas** (merma) y **ajustes por conteo**. Los movimientos no se borran.
 Con un **mínimo**, el almacén avisa cuando la existencia baja de ese número.
 
-## 12. Usuarios (Socio y Desarrollador)
+## 12. Análisis (Socio, Desarrollador y Administración)
+
+![Resumen del Análisis](img/an-resumen.png)
+
+Muestra cómo va la empresa con números y gráficos. Solo se consulta: aquí no se cambia nada.
+
+**Arriba eliges el período:** *Este mes*, *Últimos 30 días*, *Últimos 90 días*, *Este año* o *Todo*.
+Las ventas, cobros, producción y envasado son **del período**. Los saldos, lo vencido, lo pendiente y las
+existencias son siempre **de hoy**.
+
+| Pestaña | Qué muestra |
+| --- | --- |
+| **Resumen** | Ventas, cobrado, por cobrar (y vencido), producción aprobada, envasado y artículos bajo mínimo. Ventas por mes y pedidos por estado |
+| **Pedidos** | Pedidos, ventas, ticket promedio y frascos vendidos. Ventas y pedidos por mes, por estado, por vendedor y por canal. Productos más vendidos y mejores clientes |
+| **Cobranzas** | Cobrado en el período, por cobrar, vencido, pedidos en curso y dinero por entregar a Administración. Cobrado por mes, por medio de pago y por persona. **Deuda por cliente** con lo vencido y su límite |
+| **Producción y Taller** | Litros aprobados, lotes, órdenes pendientes, bolsas envasadas y lo que falta envasar. Litros y bolsas por mes, colores más producidos y productos más envasados |
+| **Almacén** | Artículos con existencia, bajo mínimo y en negativo por almacén; lista de lo que hay que **reponer**; granel disponible |
+
+![Análisis en el celular](img/an-movil.png) ![Detalle de un gráfico](img/an-movil-grafico.png)
+
+- **Detalle de un gráfico:** toca una barra (o pasa el mouse) para ver el mes y el monto exacto.
+- Un recuadro con **borde rojo** pide atención: hay deuda vencida o artículos bajo el mínimo.
+- *Pedidos* no cuenta los anulados (se muestran aparte). *Por cobrar* suma los pedidos entregados y los adelantos;
+  *Pedidos en curso* es lo que se cobrará al entregar.
+
+![Cobranzas en Análisis](img/an-cobranzas.png)
+
+## 13. Usuarios (Socio y Desarrollador)
 
 ![Usuarios](img/socio-usuarios.png)
 
 **Mi cuenta → Administrar usuarios:**
+
 - asignar el perfil;
 - vincular al vendedor con su nombre de la lista de clientes («Vende como»);
 - activar o desactivar la cuenta.
@@ -351,7 +383,7 @@ Nadie puede quitarse su propio perfil de socio o desarrollador.
 
 ---
 
-## 13. Preguntas frecuentes
+## 14. Preguntas frecuentes
 
 **No veo un botón que otro compañero sí ve.** Cada perfil ve solo lo que puede hacer (sección 4).
 
@@ -364,11 +396,17 @@ que pasa al Taller.
 
 **Un producto no aparece en el catálogo.** No tiene medidas; un socio debe agregarlas.
 
+**El botón del manual o de la guía no abre el PDF.** Se abre en una pestaña nueva; revisa que el navegador
+no la haya bloqueado. Si se abre la app en lugar del PDF, tu app tiene una versión anterior: ciérrala por
+completo y vuelve a abrirla (en *Mi cuenta* debe decir 0.8.0).
+
+**No veo el módulo Análisis.** Solo lo ven socios, Desarrollador y Administración.
+
 **La app no muestra lo último.** Cierra y vuelve a abrir la app; se actualiza sola. La versión está en *Mi cuenta*.
 
 **Olvidé mi contraseña.** Pide a un socio o al Desarrollador que te pongan una nueva y cámbiala al entrar.
 
-## 14. Glosario
+## 15. Glosario
 
 | Término | Significado |
 | --- | --- |
@@ -383,3 +421,6 @@ que pasa al Taller.
 | Recibo | Comprobante interno de un cobro (R-00001…) |
 | Novedad | Aviso informativo de clientes o precios nuevos o cambiados |
 | Alerta | Dato faltante, error o pedido en revisión, con comentarios |
+| Ticket promedio | Ventas del período ÷ número de pedidos |
+| Vencido | Saldo de un pedido cuya fecha de pago ya pasó |
+| Datos de demostración | Pedidos, cobros y producción de ejemplo marcados [DEMO]; se borran antes de usar la app de verdad |

@@ -25,6 +25,37 @@ Cada versión indica qué hay que ejecutar en Supabase. Las migraciones se ejecu
 
 ---
 
+## 0.8.0 · Módulo Análisis y botones de ayuda · 21/10/2026
+
+**Tipo:** menor (módulo nuevo).
+**Supabase:**
+1. `0011_analisis.sql` (no cambia ni borra datos).
+2. *Opcional, solo para pruebas:* `datos/04_datos_demo.sql` carga datos de demostración.
+   Se borran con `datos/05_borrar_datos_demo.sql` antes de usar la app de verdad.
+
+- **Módulo Análisis** (socios, Desarrollador y Administración). Elige el período (este mes, 30 o 90 días, este año
+  o todo) y muestra:
+  - **Resumen:** ventas, cobrado, por cobrar y vencido, producción aprobada, envasado y artículos bajo mínimo;
+  - **Pedidos:** por mes, por estado, por vendedor y por canal; productos más vendidos y mejores clientes;
+  - **Cobranzas:** cobrado por mes, por medio de pago y por persona; deuda y vencido por cliente con su límite;
+  - **Producción y Taller:** litros y bolsas por mes, colores más producidos, productos más envasados,
+    órdenes y lotes por estado;
+  - **Almacén:** existencias por almacén, lo que está bajo mínimo y el granel disponible.
+  Los demás perfiles no ven el módulo, y la base de datos rechaza la consulta si lo intentan.
+- **Manual y guía rápida:** los botones de *Mi cuenta* abrían la propia app en vez del PDF. La causa era el
+  *service worker*, que respondía con la app a cualquier dirección. Ahora deja pasar `docs/` y los `.pdf`, y el
+  botón abre el PDF en una pestaña nueva (desde ahí se lee, descarga o imprime).
+- **Datos de demostración:**
+  - `04_datos_demo.sql` carga unos 220 pedidos de los últimos 4 meses con su historial, cobros, órdenes,
+    lotes, envasados, compras y consumos, con precios reales de los clientes;
+  - todo queda marcado (`[DEMO]`, `DEMO…`, `(demo)`);
+  - `05_borrar_datos_demo.sql` lo borra sin tocar los datos reales.
+- **Documentación:**
+  - manual con la sección *Análisis*, la fila nueva en los permisos y dos preguntas frecuentes;
+  - capacitación (presentación y guías de Socio y Administración) actualizada a 0.8.0.
+
+---
+
 ## 0.7.0 · Perfiles definitivos, usuarios reales y documentación · 21/10/2026
 
 **Tipo:** menor (perfil nuevo y cambios de permisos).

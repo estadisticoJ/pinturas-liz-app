@@ -35,6 +35,8 @@ export default defineConfig({
         // Las fotos de productos no se descargan todas al instalar: se guardan al verlas por primera vez
         globPatterns: ['**/*.{js,css,html,svg}', '*.png'],
         globIgnores: ['docs/**'],          // el manual y las guías (PDF) se descargan al abrirlos
+        // Los PDF del manual y las guías se abren como archivos, no como pantallas de la app
+        navigateFallbackDenylist: [/\/docs\//, /\.pdf$/i],
         runtimeCaching: [{
           urlPattern: /\/assets\/.*\.(webp|png|jpe?g)$/i,
           handler: 'CacheFirst',

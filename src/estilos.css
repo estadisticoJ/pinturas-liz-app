@@ -12,7 +12,7 @@ img{max-width:100%}
   --accent:#C8202A; --accent-ink:#FFFFFF;
   --brand:#1559C2; --sol:#F6C21A; --sol-ink:#2A1E00;
   --head:#0E3A8C; --head-ink:#FFFFFF; --head-muted:#C6D5F3; --head-line:#2E5DB3;
-  --tapa:#0E3A8C; --danger:#A3241B; --veil:rgba(8,20,50,.5);
+  --tapa:#0E3A8C; --serie:#1559C2; --danger:#A3241B; --veil:rgba(8,20,50,.5);
   --e-recibido:#1F4FC4; --e-en_revision:#B3261E; --e-en_taller:#8A5200; --e-listo:#0B6E66; --e-despachado:#6130C2; --e-entregado:#3B6212; --e-anulado:#6A6F8C;
   --f-display:'Bricolage Grotesque','Trebuchet MS','Segoe UI',sans-serif;
   --f-body:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
@@ -23,7 +23,7 @@ img{max-width:100%}
   --accent:#FF5A5F; --accent-ink:#2B0507;
   --brand:#8DB6FF; --sol:#F6C21A; --sol-ink:#2A1E00;
   --head:#071433; --head-ink:#FFFFFF; --head-muted:#A8B5D6; --head-line:#1E3470;
-  --tapa:#C9D6F2; --danger:#FF9A8F; --veil:rgba(0,0,0,.6);
+  --tapa:#C9D6F2; --serie:#5B8FF0; --danger:#FF9A8F; --veil:rgba(0,0,0,.6);
   --e-recibido:#93B4FF; --e-en_revision:#FF8A80; --e-en_taller:#F5B94A; --e-listo:#5FD4C4; --e-despachado:#C4A6FF; --e-entregado:#B5E06B; --e-anulado:#A4A9CC;
   color-scheme:dark } }
 :root[data-theme="dark"]{
@@ -31,7 +31,7 @@ img{max-width:100%}
   --accent:#FF5A5F; --accent-ink:#2B0507;
   --brand:#8DB6FF; --sol:#F6C21A; --sol-ink:#2A1E00;
   --head:#071433; --head-ink:#FFFFFF; --head-muted:#A8B5D6; --head-line:#1E3470;
-  --tapa:#C9D6F2; --danger:#FF9A8F; --veil:rgba(0,0,0,.6);
+  --tapa:#C9D6F2; --serie:#5B8FF0; --danger:#FF9A8F; --veil:rgba(0,0,0,.6);
   --e-recibido:#93B4FF; --e-en_revision:#FF8A80; --e-en_taller:#F5B94A; --e-listo:#5FD4C4; --e-despachado:#C4A6FF; --e-entregado:#B5E06B; --e-anulado:#A4A9CC;
   color-scheme:dark }
 
@@ -267,3 +267,36 @@ details summary{cursor:pointer}
 
 /* 0.7.0 · Enlaces con forma de botón (manual y guías) */
 a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
+
+/* Análisis (0.8.0): números destacados y gráficos de una sola serie */
+.analisis .periodo{margin-bottom:2px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi-t{font-size:13px;font-weight:600;color:var(--muted)}
+.kpi-v{font-family:var(--f-display);font-size:24px;line-height:1.2;color:var(--ink);overflow-wrap:anywhere}
+.kpi-n{font-size:13px;color:var(--muted)}
+.kpi-alerta{border-color:var(--danger)}
+.kpi-alerta .kpi-n{color:var(--danger);font-weight:600}
+.aviso-ic{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--danger);color:var(--surface);font-size:11px;font-weight:800;margin-right:3px;vertical-align:1px}
+.graf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px}
+.graf{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.graf h3{margin:0 0 10px;font-size:15px;color:var(--ink)}
+.graf .tabla-w{border:0;border-radius:0}
+.columnas{width:100%;height:auto;display:block;overflow:visible}
+.columnas .grid{stroke:var(--line);stroke-width:1}
+.columnas .eje{stroke:var(--muted);stroke-width:1}
+.columnas path{fill:var(--serie)}
+.columnas .col:hover path,.columnas .col:focus path{opacity:.8}
+.columnas .col{outline:none}
+.columnas text{font-family:var(--f-body);text-anchor:middle;fill:var(--muted);font-size:12px}
+.columnas text.v{fill:var(--ink);font-weight:600}
+/* Todas las filas comparten las columnas (subgrid): las barras empiezan y terminan en el mismo lugar */
+.barras{display:grid;grid-template-columns:minmax(90px,38%) minmax(0,1fr) auto;column-gap:8px;row-gap:7px}
+.barra{display:grid;grid-column:1/-1;grid-template-columns:subgrid;align-items:center;font-size:13.5px;border-radius:6px;outline:none}
+.barra:hover,.barra:focus-visible{background:var(--surface-2)}
+.barra-l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.barra-t{height:14px;display:block}
+.barra-f{display:block;height:100%;background:var(--serie);border-radius:0 4px 4px 0;min-width:0}
+.barra-v{color:var(--ink);font-weight:600;white-space:nowrap}
+.tip{position:absolute;z-index:45;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px;pointer-events:none;max-width:260px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+@media (max-width:520px){ .barras{grid-template-columns:minmax(80px,40%) minmax(0,1fr) auto} .kpi-v{font-size:21px} }

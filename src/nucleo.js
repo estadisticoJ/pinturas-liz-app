@@ -4,9 +4,9 @@
 /* ============ Perfiles ============
    La base de datos decide qué se permite (RLS y funciones). Esto solo decide qué se muestra. */
 export const ROLES = {
-  socio:          { mod:['pedidos','clientes','cobranzas','produccion','taller','almacen'], crea:true,  ve:'todos',    filtro:'todos' },
-  desarrollador:  { mod:['pedidos','clientes','cobranzas','produccion','taller','almacen'], crea:true,  ve:'todos',    filtro:'todos' },
-  administrativo: { mod:['pedidos','clientes','cobranzas','taller','almacen'],   crea:true,  ve:'todos',    filtro:'todos' },
+  socio:          { mod:['pedidos','clientes','cobranzas','produccion','taller','almacen','analisis'], crea:true,  ve:'todos',    filtro:'todos' },
+  desarrollador:  { mod:['pedidos','clientes','cobranzas','produccion','taller','almacen','analisis'], crea:true,  ve:'todos',    filtro:'todos' },
+  administrativo: { mod:['pedidos','clientes','cobranzas','taller','almacen','analisis'], crea:true,  ve:'todos',    filtro:'todos' },
   vendedor:       { mod:['pedidos','clientes','cobranzas'],                     crea:true,  ve:'propios',  filtro:'todos' },
   taller:         { mod:['taller','pedidos','almacen'],                         crea:false, ve:'todos',    filtro:'en_taller' },
   despacho:       { mod:['pedidos','almacen'],                                  crea:false, ve:'todos',    filtro:'listo' },

@@ -10,6 +10,7 @@ import './modulos/cobranzas.js';
 import './modulos/produccion.js';
 import './modulos/taller.js';
 import './modulos/almacen.js';
+import './modulos/analisis.js';
 import './modulos/usuarios.js';
 import { refrescarContador, cargarComentarios } from './modulos/alertas.js';
 
@@ -49,8 +50,8 @@ R.hojas.perfil = () => cab(esc(S.perfil.nombre), esc(NOMBRE_ROL[S.perfil.rol] ||
   <p class="muted">Tu perfil define qué módulos ves y qué puedes cambiar. Solo un socio puede modificarlo.</p>
   <p class="sub">Ayuda</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a class="btn" href="./docs/manual-usuario.pdf" target="_blank" rel="noopener">Manual de usuario</a>
-    ${GUIA[S.perfil.rol] ? `<a class="btn" href="./docs/guia-${GUIA[S.perfil.rol]}.pdf" target="_blank" rel="noopener">Guía rápida de mi perfil</a>` : ''}
+    <a class="btn" href="./docs/manual-usuario.pdf" target="_blank" rel="noopener">Manual de usuario (PDF)</a>
+    ${GUIA[S.perfil.rol] ? `<a class="btn" href="./docs/guia-${GUIA[S.perfil.rol]}.pdf" target="_blank" rel="noopener">Guía rápida de mi perfil (PDF)</a>` : ''}
     <button class="btn" data-a="aviso-nuevo" data-v="aviso">Avisar un error de datos</button>
     <button class="btn" data-a="aviso-nuevo" data-v="mejora">Sugerir una mejora</button></div>
   <p class="sub">Cuenta</p>

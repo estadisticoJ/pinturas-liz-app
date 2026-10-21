@@ -10,7 +10,7 @@ Cubre pedidos, clientes y precios, cobranzas, producción, taller y almacén de 
 | [`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md) | Las personas que usan la app | Perfiles, módulos, qué puede hacer cada perfil y cómo hacerlo. Su PDF se abre desde la app (*Mi cuenta → Manual de usuario*) |
 | [`HISTORIAL_VERSIONES.md`](HISTORIAL_VERSIONES.md) | Todos | **Única** historia de versiones: qué cambió en cada una y qué ejecutar en Supabase |
 
-Versión actual: **0.7.0** · Dirección: https://estadisticoj.github.io/pinturas-liz-app/
+Versión actual: **0.8.0** · Dirección: https://estadisticoj.github.io/pinturas-liz-app/
 
 ---
 
@@ -70,10 +70,10 @@ Si el proyecto aparece pausado: en Supabase pulsa **Resume project**.
 | `src/main.js` | Arranque, inicio de sesión, *Mi cuenta* y cambios en vivo |
 | `src/nucleo.js` | Estado compartido, perfiles (`ROLES`) y utilidades |
 | `src/datos.js` | Todas las llamadas a Supabase |
-| `src/modulos/` | Un archivo por módulo: `pedidos`, `clientes`, `cobranzas`, `produccion`, `taller`, `almacen`, `alertas`, `usuarios` |
+| `src/modulos/` | Un archivo por módulo: `pedidos`, `clientes`, `cobranzas`, `produccion`, `taller`, `almacen`, `analisis`, `alertas`, `usuarios` |
 | `src/productos/` | Fotos de productos (una por producto). Su `LEEME.md` dice cómo nombrarlas |
 | `src/estilos.css` | Estilos (colores de la marca en `:root`) |
-| `public/` | Logo, íconos de la app instalable y `docs/` (manual y guías en PDF que abre la app) |
+| `public/` | Logo, íconos de la app instalable y `docs/` (manual y guías en PDF que abre la app). El *service worker* no atiende `docs/` ni los `.pdf` (`navigateFallbackDenylist` en `vite.config.js`): así el botón abre el PDF y no la app |
 | `docs/` | Manual de usuario (fuente en Markdown) y material de capacitación (PowerPoint y PDF) |
 | `supabase/migrations/` | Cambios de base de datos, numerados. Se ejecutan en orden y una sola vez |
 | `supabase/datos/` | Carga de datos reales (Excel), limpieza de pruebas y usuarios reales |
@@ -128,6 +128,7 @@ Cada versión llega como un .zip con la carpeta `pinturas-liz-app` completa. Ord
 | `0008_unidades_revision.sql` | 0.6.0 | Frascos y unidades, modificación, revisión, reglas de cobro |
 | `0009_perfil_desarrollador.sql` | 0.7.0 | Perfil *Desarrollador* (va solo) |
 | `0010_permisos_v07.sql` | 0.7.0 | Permisos por perfil de la 0.7.0 y novedades de clientes |
+| `0011_analisis.sql` | 0.8.0 | Función `analisis(desde, hasta)` del módulo Análisis (solo socio, desarrollador y administrativo). No cambia datos |
 
 ### Datos (`supabase/datos/`)
 
@@ -136,6 +137,8 @@ Cada versión llega como un .zip con la carpeta `pinturas-liz-app` completa. Ord
 | `01_limpiar_pruebas.sql` | Antes de cargar el Excel (borra datos de prueba, no usuarios) |
 | `02_carga_metadatos.sql` | Carga de productos, clientes y precios del Excel (generado por `scripts/metadatos_a_sql.py`) |
 | `03_usuarios_reales.sql` | Borra cuentas y operaciones de prueba y crea las 10 cuentas reales |
+| `04_datos_demo.sql` | **Opcional, solo para pruebas.** Carga ~220 pedidos, cobros, órdenes, lotes, envasados y compras de ejemplo de los últimos meses (notas `[DEMO]`, referencias `DEMO…`, artículos `(demo)`). Se niega a correr dos veces |
+| `05_borrar_datos_demo.sql` | Borra **solo** lo que cargó `04` y termina mostrando una verificación (todo en 0). Ejecutar antes de empezar a usar la app de verdad |
 
 ### Reglas importantes
 
@@ -144,6 +147,7 @@ Cada versión llega como un .zip con la carpeta `pinturas-liz-app` completa. Ord
 - El perfil **Desarrollador** cuenta como **Socio** en todas las reglas (`rol_actual()` responde `socio`);
   `es_desarrollador()` lo distingue.
 - Movimientos de almacén, cobros, precios e historial de pedidos no se borran: se corrigen o anulan.
+  La única excepción es `05_borrar_datos_demo.sql`, que borra los datos de demostración.
 
 ---
 

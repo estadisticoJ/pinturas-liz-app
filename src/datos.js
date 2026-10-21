@@ -296,3 +296,10 @@ export async function perfiles() { return revisar(await supabase.from('perfiles'
 export async function cambiarPerfil(id, cambios) {
   revisar(await supabase.from('perfiles').update(cambios).eq('id', id).select('id').single());
 }
+
+// Análisis (0.8.0): todas las métricas del período en una sola llamada. Solo socios, Desarrollador y Administración.
+export async function analisis(desde, hasta) {
+  const { data, error } = await supabase.rpc('analisis', { p_desde: desde, p_hasta: hasta });
+  if (error) throw new Error(error.message);
+  return data;
+}
