@@ -6,7 +6,8 @@ import { S, R, esc, soles, hoyISO, fechaCorta, esRol, vacio, op, campo, toast, r
 import { elegirCliente, refDe, habitualDe } from './pedidos.js';
 import { abrirAviso } from './alertas.js';
 
-const editaDatos = () => esRol('socio','administrativo');
+// Socios y Administración editan cualquier cliente; el vendedor, los datos de SUS clientes (no el vendedor ni los precios)
+const editaDatos = c => esRol('socio','administrativo') || (esRol('vendedor') && !!c && !!S.miVendedor && c.vendedor_codigo === S.miVendedor);
 const editaPrecios = () => esRol('socio','administrativo');            // cambiar un precio que ya existe
 const agregaPrecios = () => esRol('socio','administrativo','vendedor');  // primer precio de un cliente para una medida
 const nombreProducto = id => S.catalogo.find(p => p.id === id)?.nombre || '—';
@@ -45,11 +46,11 @@ function vistaClientes(){
 /* ---------- Ficha del cliente ---------- */
 R.hojas.cliente = () => {
   const c = S.clientes.find(x => x.id === S.hoja.id); if (!c) return cab('Cliente') + '<div class="hoja-body"><p class="muted">No se encontró el cliente.</p></div>';
-  const g = S.g, ed = editaDatos(), info = S.hoja.precios, hist = S.hoja.historial;
+  const g = S.g, ed = editaDatos(c), info = S.hoja.precios, hist = S.hoja.historial;
   const ro = ed ? '' : 'disabled';
   const datos = `<div class="campos">
     ${campo('c-nombre', 'Nombre', `<input id="c-nombre" data-g="nombre" maxlength="80" value="${esc(g.nombre)}" ${ro}>`, true)}
-    ${campo('c-vend', 'Vendedor', `<select id="c-vend" data-g="vendedor_codigo" ${ro}>${op('', 'Sin vendedor', g.vendedor_codigo)}${(S.vendedores || []).map(v => op(v.codigo, v.nombre, g.vendedor_codigo)).join('')}</select>`)}
+    ${campo('c-vend', 'Vendedor', `<select id="c-vend" data-g="vendedor_codigo" ${ro || (esRol('vendedor') ? 'disabled' : '')}>${op('', 'Sin vendedor', g.vendedor_codigo)}${(S.vendedores || []).map(v => op(v.codigo, v.nombre, g.vendedor_codigo)).join('')}</select>`)}
     ${campo('c-lugar', 'Lugar', `<select id="c-lugar" data-g="lugar" ${ro}>${['', 'Lima', 'Provincia', 'Oficina'].map(v => op(v, v || '—', g.lugar)).join('')}</select>`)}
     ${campo('c-zona', 'Zona o local', `<input id="c-zona" data-g="zona" maxlength="60" value="${esc(g.zona)}" placeholder="Centro de Lima, Dorado, Arequipa…" ${ro}>`)}
     ${campo('c-tel', 'Teléfono / WhatsApp', `<input id="c-tel" data-g="telefono" inputmode="tel" maxlength="20" value="${esc(g.telefono)}" ${ro}>`)}

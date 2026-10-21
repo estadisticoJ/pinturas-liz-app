@@ -9,9 +9,9 @@ import { S, R, $, esc, soles, hoyISO, fechaCorta, horaCorta, rol, miRol, esRol, 
 export const ESTADOS = [
   { id:'recibido', nombre:'Recibido', sig:'en_taller', accion:'Enviar al taller', roles:['socio','administrativo'] },
   { id:'en_revision', nombre:'En revisión', sig:'en_taller', accion:'Enviar al taller', roles:['socio','administrativo'] },
-  { id:'en_taller', nombre:'En taller', sig:'listo', accion:'Marcar listo', roles:['socio','taller'] },
-  { id:'listo', nombre:'Listo', sig:'despachado', accion:'Despachar', roles:['socio','taller','despacho'] },
-  { id:'despachado', nombre:'Despachado', sig:'entregado', accion:'Marcar entregado', roles:['socio','administrativo','despacho'] },
+  { id:'en_taller', nombre:'En taller', sig:'listo', accion:'Marcar listo', roles:['socio','administrativo','taller'] },
+  { id:'listo', nombre:'Listo', sig:'despachado', accion:'Despachar', roles:['socio','administrativo','taller','despacho'] },
+  { id:'despachado', nombre:'Despachado', sig:'entregado', accion:'Marcar entregado', roles:['socio','administrativo','taller','despacho','vendedor'] },
   { id:'entregado', nombre:'Entregado' },
   { id:'anulado', nombre:'Anulado' }
 ];
@@ -122,7 +122,7 @@ function consolidar(lista){
 const esAdmin = () => esRol('socio','administrativo');
 export const puedeModificar = p => ['recibido','en_revision'].includes(p.estado) &&
   (esAdmin() || (p.creadoPor === S.perfil?.id && (p.estado === 'recibido' || p.revision?.para === 'creador')));
-const puedeRevision = p => (p.estado === 'recibido' && esAdmin()) || (p.estado === 'en_taller' && (esAdmin() || esRol('taller','despacho')))
+const puedeRevision = p => (p.estado === 'recibido' && esAdmin()) || (p.estado === 'en_taller' && (esAdmin() || esRol('taller')))
   || (p.estado === 'en_revision' && p.revision?.para === 'administracion' && esAdmin());
 const puedeReenviar = p => p.estado === 'en_revision' && p.creadoPor === S.perfil?.id && p.revision?.para === 'creador';
 const cobrable = p => p.estado === 'entregado' || (p.condicion === 'adelanto' && ['en_taller','listo','despachado'].includes(p.estado));
@@ -358,7 +358,7 @@ R.hojas.pedido = () => {
 R.hojas.revision = () => {
   const p = S.pedidos.find(x => x.id === S.hoja.id), reenviar = S.hoja.reenviar;
   const para = !p ? '' : reenviar ? 'Vuelve a Recibido y Administración lo envía al Taller.'
-    : p.estado === 'en_taller' && esRol('taller','despacho') ? 'Lo verá primero Administración, que decide si lo corrige o lo devuelve a quien lo registró.'
+    : p.estado === 'en_taller' && esRol('taller') ? 'Lo verá primero Administración, que decide si lo corrige o lo devuelve a quien lo registró.'
     : `Le llegará una alerta urgente a ${p.creadoPor === S.perfil?.id ? 'ti (lo registraste tú)' : esc(p.creadoPorNombre)} para que lo corrija.`;
   return cab(reenviar ? 'Corregido, reenviar' : p?.estado === 'en_revision' ? 'Devolver a quien lo registró' : 'Enviar a revisión', p ? p.codigo + ' · ' + esc(p.cliente.nombre) : '') + `<div class="hoja-body">
     ${campo('rv-texto', reenviar ? 'Qué corregiste (opcional)' : 'Motivo de la revisión', `<textarea id="rv-texto" data-g="texto" rows="3" maxlength="300" placeholder="${reenviar ? 'Agregué el color negro…' : 'El cliente pidió 120 ml, no 60…'}">${esc(S.g.texto || '')}</textarea>`, true)}
@@ -470,7 +470,10 @@ async function terminarEdicion(){
 
 async function cambiar(id, nuevo, texto){
   const p = S.pedidos.find(x => x.id === id); if (!p) return;
-  try { await D.cambiarEstado(id, nuevo); await recargarPedidos(); toast(p.codigo + ' ' + texto); R.acciones['contar-alertas']?.(); }
+  try {
+    // El vendedor marca Entregado sus pedidos con una función propia (no tiene permiso general sobre pedidos)
+    if (nuevo === 'entregado' && esRol('vendedor')) await D.marcarEntregado(id); else await D.cambiarEstado(id, nuevo);
+    await recargarPedidos(); toast(p.codigo + ' ' + texto); R.acciones['contar-alertas']?.(); }
   catch (e) { toast(e.message); }
   if (S.hoja?.anular) S.hoja.anular = false;
   renderTodo();

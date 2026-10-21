@@ -26,6 +26,7 @@ export async function registrarse(nombre, email, password) {
   const r = revisar(await supabase.auth.signUp({ email, password, options: { data: { nombre }, emailRedirectTo: location.href.split('#')[0] } }));
   return { requiereConfirmar: !r.session };
 }
+export async function cambiarClave(clave) { revisar(await supabase.auth.updateUser({ password: clave })); }
 export async function salir() { await supabase.auth.signOut(); }
 export async function miPerfil(id) {
   return revisar(await supabase.from('perfiles').select('id, nombre, rol, activo').eq('id', id).maybeSingle());
@@ -134,9 +135,9 @@ export async function comentariosDe(alertaId) {
 export async function comentar(alertaId, texto) {
   revisar(await supabase.from('alerta_comentarios').insert({ alerta_id: alertaId, texto }).select('id').single());
 }
-export async function crearAlerta({ titulo, detalle, cliente, producto }) {
-  return revisar(await supabase.from('alertas').insert({ tipo: 'aviso', titulo, detalle: detalle || null, cliente_id: cliente || null,
-    producto_id: producto || null }).select('id').single());
+export async function crearAlerta({ tipo = 'aviso', titulo, detalle, cliente, producto }) {
+  return revisar(await supabase.from('alertas').insert({ tipo, titulo, detalle: detalle || null, cliente_id: cliente || null,
+    producto_id: producto || null, para_rol: tipo === 'mejora' ? 'desarrollador' : null }).select('id').single());
 }
 export async function resolverAlerta(id, resuelta, comentario) {
   revisar(await supabase.rpc('resolver_alerta', { p_alerta: id, p_resuelta: resuelta, p_comentario: comentario || null }));
@@ -178,6 +179,7 @@ export async function pedidos() {
 }
 export async function crearPedido(pedido, items) { return revisar(await supabase.rpc('crear_pedido', { pedido, items })); }
 export async function editarPedido(id, pedido, items) { revisar(await supabase.rpc('editar_pedido', { p_pedido: id, pedido, items })); }
+export async function marcarEntregado(id) { revisar(await supabase.rpc('marcar_entregado', { p_pedido: id })); }
 export async function enviarRevision(id, motivo) { revisar(await supabase.rpc('enviar_revision', { p_pedido: id, p_motivo: motivo })); }
 export async function reenviarPedido(id, nota) { revisar(await supabase.rpc('reenviar_pedido', { p_pedido: id, p_nota: nota || null })); }
 export async function cambiarEstado(id, estado) {

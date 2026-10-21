@@ -5,14 +5,15 @@
    La base de datos decide qué se permite (RLS y funciones). Esto solo decide qué se muestra. */
 export const ROLES = {
   socio:          { mod:['pedidos','clientes','cobranzas','produccion','taller','almacen'], crea:true,  ve:'todos',    filtro:'todos' },
+  desarrollador:  { mod:['pedidos','clientes','cobranzas','produccion','taller','almacen'], crea:true,  ve:'todos',    filtro:'todos' },
   administrativo: { mod:['pedidos','clientes','cobranzas','taller','almacen'],   crea:true,  ve:'todos',    filtro:'todos' },
   vendedor:       { mod:['pedidos','clientes','cobranzas'],                     crea:true,  ve:'propios',  filtro:'todos' },
   taller:         { mod:['taller','pedidos','almacen'],                         crea:false, ve:'todos',    filtro:'en_taller' },
-  despacho:       { mod:['pedidos','taller','almacen'],                         crea:false, ve:'todos',    filtro:'listo' },
+  despacho:       { mod:['pedidos','almacen'],                                  crea:false, ve:'todos',    filtro:'listo' },
   laboratorio:    { mod:['produccion','almacen'],                               crea:false, ve:'ninguno',  filtro:'todos' }
 };
-export const NOMBRE_ROL = { pendiente:'Sin perfil asignado', socio:'Socio', administrativo:'Administrativo', vendedor:'Vendedor',
-  taller:'Encargado de pedidos (Taller)', despacho:'Despacho', laboratorio:'Laboratorio' };
+export const NOMBRE_ROL = { pendiente:'Sin perfil asignado', desarrollador:'Desarrollador', socio:'Socio', administrativo:'Administrativo', vendedor:'Vendedor',
+  taller:'Taller (envasado y despacho)', despacho:'Despacho', laboratorio:'Laboratorio' };
 
 /* ============ Estado ============ */
 export const S = {
@@ -42,7 +43,9 @@ export const cantidad = f => { const n = Math.round(Number(f) || 0), d = Math.fl
   return [d ? d + (d === 1 ? ' docena' : ' docenas') : '', u ? u + ' u' : ''].filter(Boolean).join(' + ') || '0'; };
 export const codigo = (letra, n) => letra + '-' + String(n).padStart(5, '0');
 export const rol = () => ROLES[S.perfil?.rol] || ROLES.vendedor;
-export const miRol = () => S.perfil?.rol;
+// El Desarrollador puede todo lo que puede un socio: para los permisos cuenta como socio
+export const miRol = () => S.perfil?.rol === 'desarrollador' ? 'socio' : S.perfil?.rol;
+export const esDesarrollador = () => S.perfil?.rol === 'desarrollador';
 export const esRol = (...rs) => rs.includes(miRol());
 export const guarda = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } };
 export const lee = (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } };

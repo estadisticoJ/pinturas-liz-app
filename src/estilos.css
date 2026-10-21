@@ -264,3 +264,6 @@ details summary{cursor:pointer}
 .step output{min-width:64px;text-align:center}
 .empaque li{display:flex;justify-content:space-between;gap:10px}
 .hist .nota{flex-basis:100%;color:var(--muted);font-size:13px}
+
+/* 0.7.0 · Enlaces con forma de botón (manual y guías) */
+a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}

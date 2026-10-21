@@ -1,21 +1,20 @@
 # Pinturas Liz · Sistema
 
 Aplicación web instalable (PWA) para celular y computadora, con usuarios y base de datos en Supabase.
+Cubre pedidos, clientes y precios, cobranzas, producción, taller y almacén de Pinturas Liz.
 
-| Módulo | Para qué sirve | Quién lo usa |
+**Este archivo es para quien mantiene el sistema** (instalar, publicar, actualizar). Hay dos documentos más:
+
+| Documento | Para quién | Qué contiene |
 | --- | --- | --- |
-| **Pedidos** | Se elige el cliente, el catálogo muestra sus precios por docena, carrito, registro del pedido y su avance: Recibido → En taller → Listo → Despachado → Entregado | Ventas, Administración, Taller, Despacho, Socios |
-| **Clientes** | Ficha de cada cliente y sus precios por docena con fecha de vigencia e historial | Administración y Socios editan; Ventas consulta y agrega el primer precio |
-| **Cobranzas** | Saldos por cobrar, cobros con recibo numerado, cuadre del dinero que llega a Administración, límite de crédito por cliente | Ventas, Administración, Socios |
-| **Producción** | Órdenes que llegan del Taller, lotes fabricados, validación del químico y entrega del lote al Taller | Laboratorio, Socios |
-| **Taller** | Qué falta envasar, registro de envasados, órdenes al Laboratorio y materiales que consume cada bolsa | Taller, Despacho, Administración, Socios |
-| **Almacén** | Existencias y movimientos de los cinco almacenes, mínimos y alertas | Cada área ve sus almacenes |
-| **Alertas y Novedades** (campana) | Alertas: datos que faltan o están mal, con comentarios. Novedades: clientes creados y precios registrados o cambiados por el equipo | Socios: alertas y novedades. Administración: novedades. Todos pueden avisar un error |
-| **Usuarios** | Asignar el perfil de cada persona (desde *Mi cuenta*) | Socios |
+| [`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md) | Las personas que usan la app | Perfiles, módulos, qué puede hacer cada perfil y cómo hacerlo. Su PDF se abre desde la app (*Mi cuenta → Manual de usuario*) |
+| [`HISTORIAL_VERSIONES.md`](HISTORIAL_VERSIONES.md) | Todos | **Única** historia de versiones: qué cambió en cada una y qué ejecutar en Supabase |
+
+Versión actual: **0.7.0** · Dirección: https://estadisticoj.github.io/pinturas-liz-app/
 
 ---
 
-## 1. Cómo funciona el sistema
+## 1. Cómo funciona
 
 El sistema tiene tres piezas. Cada una hace una sola cosa:
 
@@ -32,36 +31,35 @@ El sistema tiene tres piezas. Cada una hace una sola cosa:
                                                                      · Cambios en vivo
 ```
 
-- **GitHub guarda el código y publica la aplicación.** Cada vez que subes cambios a la rama `main`,
-  el flujo `desplegar.yml` la compila y la publica en GitHub Pages. Tarda unos 2 minutos.
-  Ver el avance en la pestaña **Actions** del repositorio.
-- **Supabase guarda los datos y controla el acceso.** La aplicación publicada se conecta directo a Supabase
-  con la URL y la clave *publishable* (los secretos de GitHub). Supabase verifica quién entra
-  y aplica las reglas: por ejemplo, un vendedor solo ve sus pedidos, aunque intente ver los demás.
-- **La base de datos no se actualiza sola con GitHub.** Los cambios de tablas y reglas (archivos en
-  `supabase/migrations/`) se ejecutan a mano en el **SQL Editor** de Supabase, una vez cada uno y en orden.
-  Por eso la opción *Deploy to production* de la integración con GitHub debe quedar **apagada**:
-  si estuviera encendida, intentaría ejecutarlos otra vez y fallaría.
+- **GitHub guarda el código y publica la aplicación.** Cada vez que subes cambios a `main`, el flujo
+  `desplegar.yml` la compila y la publica en GitHub Pages (unos 2 minutos; el avance se ve en **Actions**).
+- **Supabase guarda los datos y controla el acceso.** Las reglas de permisos viven en la base de datos
+  (RLS y funciones), no en la app: un vendedor solo ve sus pedidos aunque intente ver los demás.
+- **La base de datos no se actualiza sola.** Los archivos de `supabase/migrations/` se ejecutan a mano en el
+  **SQL Editor**, una vez cada uno y en orden. Por eso *Deploy to production* de la integración de Supabase con
+  GitHub debe estar **apagado**.
+- **La app se actualiza sola en cada celular**: al abrirla, al volver a ella y cada 30 minutos busca la versión
+  nueva. La versión instalada se ve en *Mi cuenta*.
 
 ### Cómo se mantiene encendido
 
 | Pieza | ¿Se apaga sola? | Qué hacemos |
 | --- | --- | --- |
-| GitHub Pages | No. La página queda publicada siempre | Nada |
-| Supabase (plan gratuito) | Sí: pausa el proyecto si pasa **7 días** con poca actividad. Los datos no se pierden | El flujo `mantener-activo.yml` consulta la base cada dos días. El uso diario de la app también cuenta como actividad |
-| Flujo `mantener-activo.yml` | GitHub desactiva los flujos programados si el repositorio pasa **60 días sin cambios** | Te llegará un correo de GitHub; entra a **Actions** y pulsa *Enable workflow* |
+| GitHub Pages | No | Nada |
+| Supabase (plan gratuito) | Pausa el proyecto tras **7 días** sin actividad (los datos no se pierden) | `mantener-activo.yml` consulta la base cada dos días; el uso diario también cuenta |
+| Flujo `mantener-activo.yml` | GitHub lo desactiva si el repositorio pasa **60 días** sin cambios | Llega un correo de GitHub: **Actions → Enable workflow** |
 
-Si un día el proyecto aparece pausado: en Supabase, abre el proyecto y pulsa **Resume project**.
-Vuelve con todos sus datos en unos minutos. Para no depender de esto, el plan Pro de Supabase no se pausa.
+Si el proyecto aparece pausado: en Supabase pulsa **Resume project**.
 
 ### Dónde mirar si algo falla
 
 | Síntoma | Dónde mirar |
 | --- | --- |
-| La página no cambió después de subir código | GitHub > **Actions**: el último flujo debe estar en verde |
-| "Falta conectar Supabase" | GitHub > Settings > Secrets: nombres `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` |
-| "Tu perfil no tiene permiso…" | Supabase > SQL Editor: revisa que todas las migraciones estén ejecutadas |
-| Nadie puede entrar | Supabase > página del proyecto: ¿está pausado? |
+| La página no cambió después de subir código | GitHub → **Actions**: el último flujo debe estar en verde |
+| «Falta conectar Supabase» | GitHub → Settings → Secrets: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` |
+| «Tu perfil no tiene permiso…» | Supabase → SQL Editor: ¿están ejecutadas todas las migraciones? |
+| Nadie puede entrar | Supabase: ¿el proyecto está pausado? |
+| Alguien olvidó su contraseña | `supabase/semillas/cambiar_clave.sql` |
 
 ---
 
@@ -69,80 +67,95 @@ Vuelve con todos sus datos en unos minutos. Para no depender de esto, el plan Pr
 
 | Carpeta / archivo | Para qué sirve |
 | --- | --- |
-| `src/main.js` | Arranque, inicio de sesión y eventos |
-| `src/nucleo.js` | Estado compartido, perfiles y utilidades |
+| `src/main.js` | Arranque, inicio de sesión, *Mi cuenta* y cambios en vivo |
+| `src/nucleo.js` | Estado compartido, perfiles (`ROLES`) y utilidades |
 | `src/datos.js` | Todas las llamadas a Supabase |
 | `src/modulos/` | Un archivo por módulo: `pedidos`, `clientes`, `cobranzas`, `produccion`, `taller`, `almacen`, `alertas`, `usuarios` |
-| `src/estilos.css` | Estilos |
-| `src/productos/` | Fotos de los productos para el catálogo. Su `LEEME.md` dice cómo nombrar cada archivo |
-| `HISTORIAL_VERSIONES.md` | Qué trajo cada versión y cómo se numeran |
-| `public/` | Íconos de la aplicación instalable |
-| `supabase/migrations/` | Cambios de base de datos, numerados. Se ejecutan en orden y una sola vez cada uno |
-| `supabase/semillas/` | Datos de ejemplo para pruebas y el script del primer socio |
-| `supabase/datos/` | Datos reales: limpieza de pruebas, carga desde tu Excel y observaciones del archivo |
-| `scripts/metadatos_a_sql.py` | Convierte el Excel de metadatos en `supabase/datos/02_carga_metadatos.sql` |
-| `.github/workflows/desplegar.yml` | Publica la app en GitHub Pages al subir cambios a `main` |
-| `.github/workflows/mantener-activo.yml` | Evita que Supabase pause el proyecto |
+| `src/productos/` | Fotos de productos (una por producto). Su `LEEME.md` dice cómo nombrarlas |
+| `src/estilos.css` | Estilos (colores de la marca en `:root`) |
+| `public/` | Logo, íconos de la app instalable y `docs/` (manual y guías en PDF que abre la app) |
+| `docs/` | Manual de usuario (fuente en Markdown) y material de capacitación (PowerPoint y PDF) |
+| `supabase/migrations/` | Cambios de base de datos, numerados. Se ejecutan en orden y una sola vez |
+| `supabase/datos/` | Carga de datos reales (Excel), limpieza de pruebas y usuarios reales |
+| `supabase/semillas/` | Datos de ejemplo y utilidades (primer socio, cambiar contraseña) |
+| `scripts/` | `metadatos_a_sql.py` (Excel → SQL) y `generar_docs.sh` (manual Markdown → PDF) |
+| `.github/workflows/` | `desplegar.yml` (publica la app) y `mantener-activo.yml` (evita la pausa de Supabase) |
 
 ---
 
-## 3. Cómo actualizar a una versión nueva
+## 3. Cómo publicar una versión nueva
 
-Cada versión llega como un .zip con la carpeta `pinturas-liz-app` completa. Sigue siempre este orden:
-**primero Supabase, después GitHub**, para que la app nueva encuentre las tablas que necesita.
+Cada versión llega como un .zip con la carpeta `pinturas-liz-app` completa. Orden: **primero Supabase, después GitHub**.
 
-### 3.1 Supabase: ejecutar solo las migraciones nuevas
+1. **Supabase**: en **SQL Editor → New query**, ejecuta solo las migraciones nuevas que indica
+   `HISTORIAL_VERSIONES.md`, en orden y **una por consulta**. Si sale «already exists», ya estaba ejecutada.
+2. **VS Code**: descomprime el .zip y copia el contenido de `pinturas-liz-app` dentro de
+   `D:\Proyectos\pinturas-liz-app` → **Reemplazar los archivos**. No borres la carpeta (dentro está `.git`).
+3. **GitHub**, en la terminal de VS Code:
+   ```bash
+   git add .
+   git commit -m "Versión X.Y.Z: resumen"
+   git push
+   git tag vX.Y.Z
+   git push --tags
+   ```
+4. **Comprobar**: Actions en verde → abrir la app → *Mi cuenta* muestra la versión nueva.
 
-1. Mira la tabla de versiones al final de este archivo: dice qué migraciones trae cada versión.
-2. En Supabase > **SQL Editor** > **New query**, pega el contenido de cada migración nueva, en orden, y pulsa **Run**.
-3. Debe decir *Success. No rows returned*. Si aparece un aviso de operaciones destructivas, revisa que sea
-   la migración correcta y confirma.
-4. Si sale "already exists", esa migración ya estaba ejecutada: no la repitas y sigue con la siguiente.
+### Lista de cierre de cada versión (siempre, en el mismo commit)
 
-### 3.2 VS Code: reemplazar los archivos
-
-1. Descomprime el .zip nuevo en una carpeta temporal (por ejemplo, el Escritorio).
-2. Copia **todo el contenido** de la carpeta `pinturas-liz-app` nueva y pégalo dentro de tu carpeta de trabajo
-   (`D:\Proyectos\pinturas-liz-app`). Cuando Windows pregunte, elige **Reemplazar los archivos**.
-   - No borres tu carpeta: dentro está la carpeta oculta `.git`, que conecta con GitHub.
-   - El .zip no trae `.env` ni `node_modules`, así que no los toca.
-3. Abre esa carpeta en VS Code. En el panel **Source Control** (ícono de ramas, a la izquierda) verás los archivos cambiados.
-
-### 3.3 GitHub: subir los cambios
-
-En la terminal de VS Code (**Terminal > New Terminal**):
-
-```bash
-git add .
-git commit -m "Versión 0.6.0: pedidos por unidades, modificación y revisión"
-git push
-git tag v0.6.0
-git push --tags
-```
-
-La etiqueta (`git tag`) marca la versión en GitHub (pestaña *Tags*), para poder volver a ella si hace falta.
-
-O sin terminal: en **Source Control** escribe el mensaje, pulsa **Commit** y luego **Sync Changes**.
-
-### 3.4 Comprobar
-
-1. GitHub > **Actions**: espera a que el flujo *Desplegar en GitHub Pages* quede en verde (unos 2 minutos).
-2. Abre la app y recarga la página. Si sigue viéndose la versión anterior, cierra la pestaña y vuelve a abrirla:
-   la aplicación instalada se actualiza sola en la siguiente apertura.
+- [ ] `package.json`: número de versión (MAYOR.MENOR.CORRECCIÓN; ver `HISTORIAL_VERSIONES.md`).
+- [ ] `HISTORIAL_VERSIONES.md`: entrada nueva con fecha, tipo, cambios y qué ejecutar en Supabase.
+- [ ] `docs/MANUAL_USUARIO.md`: lo que cambió para el usuario + sección *Novedades de esta versión*.
+- [ ] PDF del manual regenerado (`scripts/generar_docs.sh`) en `public/docs/`.
+- [ ] Material de capacitación actualizado si cambió un flujo que se enseña.
+- [ ] Etiqueta `vX.Y.Z` en GitHub.
 
 ---
 
-## 4. Instalación desde cero (solo la primera vez)
+## 4. Base de datos
 
-Ya lo hiciste; queda aquí como referencia.
+### Migraciones (`supabase/migrations/`)
 
-1. Supabase: crear el proyecto y ejecutar todas las migraciones en orden; opcionalmente `semillas/catalogo_ejemplo.sql`.
-2. GitHub: subir el proyecto, crear los secretos `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
-   (la clave *publishable*, `sb_publishable_...`) y elegir **GitHub Actions** en Settings > Pages.
-3. Supabase > Authentication > URL Configuration: *Site URL* y *Redirect URLs* con la dirección de la app.
-4. Crear tu cuenta en la app y ejecutar `semillas/primer_socio.sql` con tu correo.
+| Archivo | Versión | Contenido |
+| --- | --- | --- |
+| `0001_pedidos.sql` | 0.2.0 | Perfiles, catálogo, clientes, pedidos, historial y reglas base |
+| `0002_ajustes_app.sql` | 0.2.0 | Nombres visibles y protección del perfil de socio |
+| `0003_modulos.sql` | 0.3.0 | Almacén, producción, taller y cobranzas |
+| `0004_precios_clientes.sql` | 0.4.0 | Vendedores, datos de cliente y precios por docena con vigencia |
+| `0005_alertas_precio_manual.sql` | 0.4.1 | Alertas con comentarios, precio a mano, medidas solo por socios |
+| `0006_precio_sugerido_novedades.sql` | 0.4.2 | Precio sugerido, medida habitual y novedades |
+| `0007_estados_nuevos.sql` | 0.6.0 | Estado *En revisión* y pago *Adelanto* (va solo) |
+| `0008_unidades_revision.sql` | 0.6.0 | Frascos y unidades, modificación, revisión, reglas de cobro |
+| `0009_perfil_desarrollador.sql` | 0.7.0 | Perfil *Desarrollador* (va solo) |
+| `0010_permisos_v07.sql` | 0.7.0 | Permisos por perfil de la 0.7.0 y novedades de clientes |
 
-Para probar en tu computadora antes de subir (opcional, requiere [Node.js](https://nodejs.org) 20+):
+### Datos (`supabase/datos/`)
+
+| Archivo | Cuándo |
+| --- | --- |
+| `01_limpiar_pruebas.sql` | Antes de cargar el Excel (borra datos de prueba, no usuarios) |
+| `02_carga_metadatos.sql` | Carga de productos, clientes y precios del Excel (generado por `scripts/metadatos_a_sql.py`) |
+| `03_usuarios_reales.sql` | Borra cuentas y operaciones de prueba y crea las 10 cuentas reales |
+
+### Reglas importantes
+
+- Los permisos se definen en la base de datos: `rol_actual()`, `tiene_rol()`, políticas RLS y funciones
+  `security definer`. La app solo decide qué botones mostrar. El detalle por perfil está en el manual.
+- El perfil **Desarrollador** cuenta como **Socio** en todas las reglas (`rol_actual()` responde `socio`);
+  `es_desarrollador()` lo distingue.
+- Movimientos de almacén, cobros, precios e historial de pedidos no se borran: se corrigen o anulan.
+
+---
+
+## 5. Instalación desde cero (referencia)
+
+1. Supabase: crear el proyecto y ejecutar todas las migraciones en orden (0007 y 0009 cada una sola).
+2. GitHub: subir el proyecto, crear los secretos `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (clave *publishable*)
+   y elegir **GitHub Actions** en Settings → Pages.
+3. Supabase → Authentication → URL Configuration: *Site URL* y *Redirect URLs* con la dirección de la app.
+4. Datos: `datos/01`, `datos/02` y `datos/03_usuarios_reales.sql`.
+
+Para probar en la computadora (opcional, requiere Node.js 20+):
 
 ```bash
 npm install
@@ -150,119 +163,13 @@ copy .env.example .env    # y completa la URL y la clave
 npm run dev
 ```
 
----
-
-## 5. Primeros pasos con los módulos nuevos (v0.3.0)
-
-Para probar sin cargar datos reales: ejecuta `supabase/semillas/almacen_ejemplo.sql` en el SQL Editor
-(requiere el catálogo de ejemplo). Para quitarlo después: `supabase/semillas/limpiar_almacen_ejemplo.sql`.
-
-Para que el Taller y el Almacén calculen bien con datos reales, carga esto una vez:
-
-1. **Almacén > Insumos** (Administración o Laboratorio): crea los insumos (pigmentos, espesantes…) con su unidad
-   y registra la compra inicial con la cantidad que hay hoy.
-2. **Almacén > Materiales** (Administración o Taller): crea frascos de cada medida, tapas, etiquetas y bolsas,
-   y registra lo que hay hoy.
-3. **Taller > Materiales por bolsa**: para cada presentación, indica cuántos frascos, tapas, etiquetas y bolsas
-   consume una bolsa (por ejemplo, 30 ml × 12: 12 frascos, 12 tapas, 12 etiquetas y 1 bolsa).
-4. **Almacén > Granel Taller y Producto envasado**: si hoy ya hay baldes o bolsas, usa *Ajustar por conteo*
-   para registrar lo que existe.
-
-Cómo se mueven solos los almacenes:
-
-| Acción | Efecto en el almacén |
-| --- | --- |
-| El Laboratorio registra un lote | Salen los insumos usados |
-| El químico aprueba el lote | Entra a **Granel Laboratorio** (la reserva) |
-| El Laboratorio entrega el lote | Pasa de **Granel Laboratorio** a **Granel Taller** y la orden queda atendida |
-| El Taller registra un envasado | Sale granel y materiales, entra **Producto envasado** |
-| Un pedido pasa a **Listo** | Sus bolsas salen de **Producto envasado** |
-| Administración confirma un cobro | Deja de figurar como dinero por entregar |
-
-Si el Taller marca pedidos como listos sin haber registrado los envasados, el producto envasado quedará en
-negativo. Es una señal para registrar los envasados o ajustar por conteo, no un error del sistema.
-
-Las cantidades de granel se manejan en **litros**, calculados como bolsas × frascos × ml.
+Para regenerar los PDF del manual (requiere `pandoc` y `wkhtmltopdf`): `bash scripts/generar_docs.sh`.
 
 ---
 
-## 6. Precios
-
-- Los precios se guardan **por docena**, por cliente, producto y medida. Un paquete de 6 cuesta la mitad.
-- **No hay precios de lista.** Cada precio es de un cliente.
-- Si el cliente es nuevo o no tiene precio para esa medida, al hacer el pedido la app pide **escribir el precio
-  por docena acordado** o usar el **precio sugerido**. Ese precio queda guardado como precio del cliente.
-- **Precio sugerido**: el precio por docena que más clientes pagan hoy por ese producto y medida (la moda).
-  **Medida habitual**: la medida de cada producto que más clientes compran. El catálogo muestra el sugerido de la
-  medida habitual, la hoja del producto la elige por defecto y hay botones para usar ambos.
-- Si cambias el cliente de un pedido, el carrito se recalcula con los precios del nuevo cliente; lo que no tenga
-  precio queda marcado en el carrito para escribirlo ahí mismo.
-- Quién puede hacer qué:
-
-  | Acción | Socio | Administración | Ventas |
-  | --- | --- | --- | --- |
-  | Escribir el primer precio de un cliente (en el pedido o con *Agregar precio*) | Sí | Sí | Sí |
-  | Cambiar un precio que ya existe | Sí | Sí | No: avisa a los socios |
-  | Agregar una medida nueva a un producto (por ejemplo, la primera de Pegatransfer) | Sí | No | No |
-
-- Un precio nunca se borra: al cambiarlo se elige desde qué fecha rige, y el anterior queda en el historial
-  hasta el día antes. Se puede programar un alza con fecha futura.
-- El pedido guarda el precio del día en que se registró; cambios posteriores no lo alteran.
-- Los precios del Excel rigen desde el **01/01/2026**. Cuando un cliente tenía dos precios distintos para lo mismo,
-  el de arriba quedó como precio de 2025 (en el historial) y el de abajo como el vigente.
-- Cada vendedor se vincula con su nombre de la lista (Jorge, Lily…) en **Mi cuenta > Administrar usuarios**.
-  Así ve primero sus clientes y los clientes que crea quedan a su nombre.
-
-Desde ahora los clientes y precios se mantienen en la aplicación. El Excel ya no es la fuente: no vuelvas a
-ejecutar la carga, porque duplicaría clientes.
-
-### Novedades (campana de la barra superior)
-
-- Cuando alguien crea un cliente o registra o cambia un precio, socios y Administración lo ven en **Novedades**,
-  con quién lo hizo y el precio anterior. Es solo informativo: no hay que aprobar nada.
-- El número amarillo de la campana suma las alertas abiertas y las novedades que aún no viste.
-
-### Alertas (campana de la barra superior)
-
-- La carga del Excel dejó una alerta por cada dato faltante o dudoso: precios en cero, precios repetidos,
-  productos sin precio o sin código y clientes sin teléfono, dirección o documento.
-- Cualquier persona puede usar **Avisar un error** (en la campana, en *Mi cuenta* o en la ficha del cliente).
-- En cada alerta se conversa con comentarios. Solo un socio la marca como **resuelta** (o la reabre).
-  Las de *Falta precio* y *Producto sin precio* se resuelven solas al registrar el precio.
-
-## 7. Pedidos: unidades, revisión y cobros
-
-- Se pide por **docenas o unidades**; el precio sale de la docena (÷ 12 por frasco). El Taller junta los colores
-  de un mismo producto y medida en bolsas de 12 (hasta 120 ml) o de 6 (250 ml); el pedido muestra el empaque.
-- **Recibido → (En revisión) → En taller → Listo → Despachado → Entregado.** Socios y Administración pueden
-  modificar, anular o enviar a revisión antes del Taller; el Taller puede pedir revisión y la ve Administración.
-  Quien debe corregir ve una alerta roja arriba de la pantalla hasta que reenvía el pedido.
-- **Cobros:** contado y crédito al estar Entregado; **adelanto** desde que el pedido pasa al Taller.
-
-## 8. Fotos de productos
-
-Las fotos van en `src/productos/`, una por producto, con el nombre del producto en minúsculas, sin tildes y con
-guiones: *Mate FLT* → `mate-flt.webp`. La lista completa de nombres está en `src/productos/LEEME.md`.
-Al subir los cambios a GitHub, la app las muestra sola en el catálogo y en la hoja del producto.
-
-## 9. Seguridad
+## 6. Seguridad
 
 - La clave *publishable* es pública por diseño; lo que protege los datos son las reglas de las migraciones.
 - Nunca pongas la clave **secret** (`sb_secret_...`) en GitHub ni en la aplicación.
-- Los movimientos de almacén y los cobros no se borran: se corrigen con un ajuste o se anulan, y queda registrado quién lo hizo.
-
----
-
-## 10. Versiones
-
-La historia detallada está en `HISTORIAL_VERSIONES.md`.
-
-| Versión | Migraciones a ejecutar | Cambios |
-| --- | --- | --- |
-| 0.2.0 | 0001, 0002 | Pedidos con usuarios reales, perfiles, catálogo, consolidado y Usuarios |
-| 0.3.0 | 0003 | Cobranzas, Producción, Taller y Almacén. Saldo y cobro en el detalle del pedido. Usuarios pasa a *Mi cuenta*. Flujo que mantiene activo Supabase |
-| 0.4.0 | 0004, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` | Datos reales: 302 clientes, 42 productos, 423 colores y 2.079 precios. Precios por docena con vigencia e historial. Módulo Clientes. Vendedores vinculados a usuarios |
-| 0.4.1 | (0004 si no la ejecutaste) 0005, luego `datos/01_limpiar_pruebas.sql` y `datos/02_carga_metadatos.sql` nuevos | Carga desde el Excel corregido: precios repetidos como historial 2025 → 2026, productos nuevos sin código, sin precios en cero. Sin precios de lista: precio escrito a mano para clientes nuevos o sin precio. Solo socios agregan medidas. Alertas con comentarios para socios |
-| 0.4.2 | **0006** | Precio sugerido (moda) y medida habitual con botones para usarlos. Novedades para socios y Administración (clientes y precios nuevos). El carrito se recalcula al cambiar de cliente. Colores y logo de la marca. La app se actualiza sola en cada celular y muestra su versión en *Mi cuenta* |
-| 0.5.0 | — | Fotos de productos en el catálogo (carpeta `src/productos`). Historial de versiones |
-| 0.6.0 | **0007** y luego **0008** | Pedidos por docenas o unidades, empaque, fecha de vencimiento manual, modificar pedidos, estado En revisión con alerta urgente, pago por adelanto |
+- `.env` no se sube a GitHub (está en `.gitignore`).
+- Las contraseñas temporales de `03_usuarios_reales.sql` deben cambiarse en el primer ingreso (*Mi cuenta → Cambiar contraseña*).

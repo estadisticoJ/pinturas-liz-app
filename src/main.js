@@ -2,7 +2,7 @@ import './estilos.css';
 import { registerSW } from 'virtual:pwa-register';
 import { configurado } from './supabase.js';
 import * as D from './datos.js';
-import { S, R, $, esc, rol, esRol, NOMBRE_ROL, marca, toast, pintarShell, renderTodo, renderNav, renderMain, renderHoja,
+import { S, R, $, esc, rol, esRol, NOMBRE_ROL, marca, toast, campo, errorHoja, botonEnviar, pintarShell, renderTodo, renderNav, renderMain, renderHoja,
   abrirHoja, cerrarHoja, cab, cargarModulo, fijarBusqueda, refrescarVivo } from './nucleo.js';
 import { recargarPedidos, elegirCliente, cargarReferencias, fijarManual } from './modulos/pedidos.js';
 import './modulos/clientes.js';
@@ -42,12 +42,28 @@ function pintarEspera(){
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" data-a="reintentar">Volver a revisar</button><button class="btn" data-a="salir">Cerrar sesión</button></div></div></div>`;
 }
 
+// Guía rápida de cada perfil (PDF dentro de la app, carpeta public/docs)
+const GUIA = { desarrollador:'socio', socio:'socio', administrativo:'administracion', vendedor:'vendedor', taller:'taller', despacho:'despacho', laboratorio:'laboratorio' };
 R.hojas.perfil = () => cab(esc(S.perfil.nombre), esc(NOMBRE_ROL[S.perfil.rol] || '')) + `<div class="hoja-body">
-  <dl class="dl"><dt>Correo</dt><dd>${esc(S.sesion?.user?.email)}</dd><dt>Perfil</dt><dd>${esc(NOMBRE_ROL[S.perfil.rol])}</dd></dl>
+  <dl class="dl"><dt>Correo</dt><dd>${esc(S.sesion?.user?.email)}</dd><dt>Perfil</dt><dd>${esc(NOMBRE_ROL[S.perfil.rol])}</dd><dt>Versión</dt><dd>${__VERSION__}</dd></dl>
   <p class="muted">Tu perfil define qué módulos ves y qué puedes cambiar. Solo un socio puede modificarlo.</p>
-  <p class="muted">Versión de la aplicación: <strong>${__VERSION__}</strong></p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">${esRol('socio') ? '<button class="btn" data-a="ir-usuarios">Administrar usuarios</button>' : ''}<button class="btn" data-a="aviso-nuevo">Avisar un error de datos</button></div></div>
+  <p class="sub">Ayuda</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="btn" href="./docs/manual-usuario.pdf" target="_blank" rel="noopener">Manual de usuario</a>
+    ${GUIA[S.perfil.rol] ? `<a class="btn" href="./docs/guia-${GUIA[S.perfil.rol]}.pdf" target="_blank" rel="noopener">Guía rápida de mi perfil</a>` : ''}
+    <button class="btn" data-a="aviso-nuevo" data-v="aviso">Avisar un error de datos</button>
+    <button class="btn" data-a="aviso-nuevo" data-v="mejora">Sugerir una mejora</button></div>
+  <p class="sub">Cuenta</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" data-a="clave">Cambiar contraseña</button>
+    ${esRol('socio') ? '<button class="btn" data-a="ir-usuarios">Administrar usuarios</button>' : ''}</div></div>
   <div class="hoja-pie"><span></span><button class="btn" data-a="salir">Cerrar sesión</button></div>`;
+
+R.hojas.clave = () => cab('Cambiar contraseña', esc(S.sesion?.user?.email || '')) + `<div class="hoja-body"><div class="campos">
+    ${campo('k-1', 'Contraseña nueva', `<input id="k-1" data-g="c1" type="password" autocomplete="new-password" minlength="8" value="${esc(S.g.c1 || '')}">`)}
+    ${campo('k-2', 'Repite la contraseña', `<input id="k-2" data-g="c2" type="password" autocomplete="new-password" minlength="8" value="${esc(S.g.c2 || '')}">`)}
+  </div><p class="muted">Mínimo 8 caracteres. Si la olvidas, un socio o el Desarrollador te pone una nueva.</p>${errorHoja()}</div>
+  <div class="hoja-pie"><button class="btn" data-a="perfil">Volver</button>${botonEnviar('clave-guardar', 'Guardar contraseña')}</div>`;
 
 /* ============ Carga y cambios en vivo ============ */
 let pararEscucha = null, tRecarga, cambios = new Set();
@@ -101,6 +117,15 @@ Object.assign(R.acciones, {
   'reintentar': () => cargarTodo(),
   'salir': () => D.salir(),
   'perfil': () => abrirHoja({ tipo:'perfil' }),
+  'clave': () => abrirHoja({ tipo:'clave' }, { c1:'', c2:'' }),
+  'clave-guardar': async () => {
+    const { c1, c2 } = S.g; if (S.enviando) return;
+    if (!c1 || c1.length < 8) { S.error = 'La contraseña debe tener al menos 8 caracteres.'; return renderHoja(); }
+    if (c1 !== c2) { S.error = 'Las dos contraseñas no coinciden.'; return renderHoja(); }
+    S.enviando = true; S.error = ''; renderHoja();
+    try { await D.cambiarClave(c1); S.enviando = false; S.hoja = null; S.g = {}; renderHoja(); toast('Contraseña cambiada'); }
+    catch (e) { S.enviando = false; S.error = e.message; renderHoja(); }
+  },
   'cerrar': () => cerrarHoja(),
   'contar-alertas': () => refrescarContador(),
   'mod': async d => {

@@ -15,9 +15,9 @@ const UNIDADES = ['kg','g','L','ml','und','millar','rollo','caja'];
 
 // Igual que la función puede_mover() de la base de datos
 const MUEVE = { socio:Object.keys(ALMACENES), administrativo:['insumos','materiales'], laboratorio:['insumos','granel_lab'],
-  taller:['granel_taller','materiales','envasado'], despacho:['granel_taller','materiales','envasado'] };
+  taller:['granel_taller','materiales','envasado'] };
 const puedeMover = a => (MUEVE[miRol()] || []).includes(a);
-const visibles = () => esRol('socio','administrativo') ? Object.keys(ALMACENES) : esRol('laboratorio') ? ['insumos','granel_lab'] : ['granel_taller','materiales','envasado'];
+const visibles = () => esRol('socio','administrativo') ? Object.keys(ALMACENES) : esRol('laboratorio') ? ['insumos','granel_lab'] : esRol('despacho') ? ['envasado'] : ['granel_taller','materiales','envasado'];
 
 R.modulos.almacen = {
   nombre:'Almacén',

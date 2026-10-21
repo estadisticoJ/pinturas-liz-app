@@ -1,6 +1,8 @@
 # Historial de versiones · Sistema Pinturas Liz
 
-Este documento cuenta cómo ha crecido el sistema. Se actualiza con cada versión nueva: la más reciente va arriba.
+Este es el **único** lugar donde se guarda la historia del sistema. El README (técnico) y el manual de usuario
+enlazan aquí; el manual solo resume la última versión en *Novedades de esta versión*.
+Se actualiza con cada versión nueva, en el mismo commit; la más reciente va arriba.
 
 ## Cómo se numeran las versiones
 
@@ -22,6 +24,40 @@ La carpeta del proyecto se llama siempre `pinturas-liz-app`, sin número. Solo e
 Cada versión indica qué hay que ejecutar en Supabase. Las migraciones se ejecutan **una sola vez**, en orden.
 
 ---
+
+## 0.7.0 · Perfiles definitivos, usuarios reales y documentación · 21/10/2026
+
+**Tipo:** menor (perfil nuevo y cambios de permisos).
+**Supabase:**
+1. `0009_perfil_desarrollador.sql` (solo).
+2. `0010_permisos_v07.sql`.
+3. `datos/03_usuarios_reales.sql`: borra las cuentas y las operaciones de prueba, y crea las 10 cuentas reales.
+
+- **Perfil Desarrollador** (Jordan Roldan): puede todo lo que puede un socio y recibe las sugerencias de mejora.
+- **Permisos por perfil:**
+  - Administración ahora también marca *Listo* y *Despacha*.
+  - **Taller** une el trabajo de taller y despacho: también marca *Entregado*.
+  - **Despacho** queda solo para despachar y marcar entregado. Ya no pide producción, no envasa y no mueve almacenes (ve el producto envasado).
+  - El **vendedor** marca *Entregado* sus propios pedidos despachados, para cobrar contra entrega.
+  - El **vendedor edita los datos de sus clientes**: teléfono, dirección, documento… No puede cambiar precios, vendedor ni límite.
+- **Novedades:** todo cambio en clientes (alta y datos) y en precios (nuevo, cambio y quitado) avisa a Socio, Administración y Desarrollador.
+- **Sugerir una mejora:** cualquier perfil la envía desde la campana o *Mi cuenta*. La ven el Desarrollador y los socios.
+- **Mi cuenta:**
+  - cambiar contraseña;
+  - manual de usuario y guía rápida del perfil (PDF);
+  - versión de la app.
+- **Usuarios reales:**
+  - Jordan Roldan (Desarrollador);
+  - Giovanni Escobedo, Liz Escobedo y Bryan Roldan (Socios);
+  - Angelina Rodas (Administración);
+  - Lily De La Cruz y Jorge Ruiz (Ventas);
+  - Encargado Taller;
+  - Encargado Despacho;
+  - Bryan Roldan (Laboratorio).
+- **Documentación:**
+  - el README pasa a ser técnico;
+  - nuevo manual de usuario (`docs/MANUAL_USUARIO.md` y su PDF en la app);
+  - material de capacitación: una presentación por perfil y guías rápidas de una página, en PowerPoint y PDF.
 
 ## 0.6.0 · Pedidos por unidades, modificación y revisión · 16/10/2026
 

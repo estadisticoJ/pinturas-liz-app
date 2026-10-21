@@ -18,7 +18,8 @@ export const TIPOS = {
   dato_excel:          'Dato del Excel',
   aviso:               'Aviso de un usuario',
   pedido_revision:     'Pedido en revisión',
-  pedido_corregido:    'Pedido corregido'
+  pedido_corregido:    'Pedido corregido',
+  mejora:              'Sugerencia de mejora'
 };
 const nombreTipo = t => TIPOS[t] || t;
 const origen = a => a.origen === 'carga' ? 'Carga del Excel' : a.autor?.nombre || 'Sistema';
@@ -27,7 +28,7 @@ const origen = a => a.origen === 'carga' ? 'Carga del Excel' : a.autor?.nombre |
 const veNovedades = () => esRol('socio','administrativo');
 const claveVisto = () => 'pl_novedades_visto_' + S.perfil?.id;
 const vistoDesde = () => lee(claveVisto(), new Date(Date.now() - 7 * 864e5).toISOString());
-const NOMBRE_NOVEDAD = { cliente_nuevo:'Cliente nuevo', precio_nuevo:'Precio nuevo', precio_cambio:'Cambio de precio' };
+const NOMBRE_NOVEDAD = { cliente_nuevo:'Cliente nuevo', cliente_cambio:'Datos de cliente', precio_nuevo:'Precio nuevo', precio_cambio:'Cambio de precio' };
 
 export async function refrescarContador(){
   try {
@@ -144,15 +145,17 @@ R.hojas.alerta = () => {
 /* ---------- Avisar un error ---------- */
 R.hojas.aviso = () => {
   const g = S.g, puedeCli = S.clientes.length > 0;
-  return cab('Avisar un error de datos', 'Llega a los socios como alerta') + `<div class="hoja-body"><div class="campos">
-    ${campo('av-titulo', 'Qué está mal o falta', `<input id="av-titulo" data-g="titulo" maxlength="100" value="${esc(g.titulo)}" placeholder="Teléfono errado, precio distinto al acordado…">`, true)}
+  const mejora = g.tipo === 'mejora';
+  return cab(mejora ? 'Sugerir una mejora' : 'Avisar un error de datos', mejora ? 'Llega al Desarrollador y a los socios' : 'Llega a los socios como alerta') + `<div class="hoja-body"><div class="campos">
+    <div class="campo full"><div class="modo" role="group" aria-label="Tipo de aviso"><button data-a="aviso-tipo" data-v="aviso" aria-pressed="${!mejora}">Error de datos</button><button data-a="aviso-tipo" data-v="mejora" aria-pressed="${mejora}">Sugerir una mejora</button></div></div>
+    ${campo('av-titulo', mejora ? 'Qué mejorarías' : 'Qué está mal o falta', `<input id="av-titulo" data-g="titulo" maxlength="100" value="${esc(g.titulo)}" placeholder="${mejora ? 'Poder imprimir el pedido, ver el stock al vender…' : 'Teléfono errado, precio distinto al acordado…'}">`, true)}
     ${campo('av-detalle', 'Detalle (opcional)', `<textarea id="av-detalle" data-g="detalle" rows="3" maxlength="500">${esc(g.detalle)}</textarea>`, true)}
     ${puedeCli ? campo('av-cli', 'Cliente (opcional)', `<select id="av-cli" data-g="cliente">${op('', 'Ninguno', g.cliente)}${S.clientes.map(c => op(c.id, c.nombre + (c.codigo ? ' · ' + c.codigo : ''), g.cliente)).join('')}</select>`, true) : ''}
     ${campo('av-prod', 'Producto (opcional)', `<select id="av-prod" data-g="producto">${op('', 'Ninguno', g.producto)}${S.catalogo.map(p => op(p.id, p.nombre, g.producto)).join('')}</select>`, true)}
-  </div>${errorHoja()}</div><div class="hoja-pie"><span></span>${botonEnviar('aviso-enviar', 'Enviar aviso')}</div>`;
+  </div>${errorHoja()}</div><div class="hoja-pie"><span></span>${botonEnviar('aviso-enviar', mejora ? 'Enviar sugerencia' : 'Enviar aviso')}</div>`;
 };
 
-export function abrirAviso(datos = {}){ abrirHoja({ tipo:'aviso' }, { titulo:'', detalle:'', cliente:'', producto:'', ...datos }); }
+export function abrirAviso(datos = {}){ abrirHoja({ tipo:'aviso' }, { tipo:'aviso', titulo:'', detalle:'', cliente:'', producto:'', ...datos }); }
 
 async function abrirAlerta(id){
   const a = S.datos.alertas?.lista?.find(x => x.id === id); if (!a) return;
@@ -178,14 +181,15 @@ Object.assign(R.acciones, {
     const a = S.hoja.alerta;
     R.acciones['precio-cambiar']({ cliente:a.cliente_id, producto:a.producto_id, ml:String(a.medida_ml) });
   },
-  'aviso-nuevo': () => abrirAviso(),
+  'aviso-nuevo': d => abrirAviso({ tipo: d.v || 'aviso' }),
+  'aviso-tipo': d => { S.g.tipo = d.v; renderHoja(); },
   'aviso-enviar': async () => {
     const g = S.g; if (S.enviando) return;
     if (!g.titulo.trim()) { S.error = 'Escribe qué está mal o qué falta.'; return renderHoja(); }
     S.enviando = true; S.error = ''; renderHoja();
     try {
-      await D.crearAlerta({ titulo:g.titulo.trim(), detalle:g.detalle.trim(), cliente:g.cliente, producto:g.producto });
-      S.enviando = false; S.hoja = null; renderHoja(); toast('Aviso enviado a los socios');
+      await D.crearAlerta({ tipo:g.tipo, titulo:g.titulo.trim(), detalle:g.detalle.trim(), cliente:g.cliente, producto:g.producto });
+      S.enviando = false; S.hoja = null; renderHoja(); toast(g.tipo === 'mejora' ? 'Sugerencia enviada al Desarrollador' : 'Aviso enviado a los socios');
       if (S.modulo === 'alertas') await recargarLista(); else await refrescarContador();
     } catch (e) { S.enviando = false; S.error = e.message; renderHoja(); }
   },

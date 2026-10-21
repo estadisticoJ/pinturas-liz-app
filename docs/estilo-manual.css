@@ -1,0 +1,16 @@
+/* Estilo del PDF del manual (colores de la marca Pinturas Liz) */
+body{font-family:"DejaVu Sans",Arial,sans-serif;font-size:10.5pt;line-height:1.45;color:#0F1E3D;margin:0}
+h1{color:#0E3A8C;font-size:22pt;border-bottom:4px solid #F6C21A;padding-bottom:6px;margin-top:0}
+h2{color:#0E3A8C;font-size:15pt;margin-top:22px;border-bottom:1px solid #D3DCEC;padding-bottom:3px;page-break-after:avoid}
+h3{color:#C8202A;font-size:12pt;margin-top:16px;page-break-after:avoid}
+table{border-collapse:collapse;width:100%;margin:8px 0 12px;font-size:9pt;page-break-inside:avoid}
+th{background:#0E3A8C;color:#fff;text-align:left;padding:5px 6px}
+td{border-bottom:1px solid #D3DCEC;padding:4px 6px;vertical-align:top}
+tr:nth-child(even) td{background:#F4F6FB}
+code,pre{font-family:"DejaVu Sans Mono",monospace;font-size:9pt}
+pre{background:#F4F6FB;border:1px solid #D3DCEC;border-radius:6px;padding:8px;page-break-inside:avoid}
+img{border:1px solid #D3DCEC;border-radius:6px;margin:6px 8px 6px 0;vertical-align:top;max-height:8.5cm;max-width:100%;width:auto}
+p:has(img){page-break-inside:avoid}
+hr{border:0;height:4px;background:linear-gradient(90deg,#C8202A 0 20%,#F07A1C 20% 40%,#F6C21A 40% 60%,#2E9D45 60% 80%,#1559C2 80% 100%);margin:18px 0}
+header#title-block-header{display:none}
+.portada{text-align:center;padding-top:60px}

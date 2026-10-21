@@ -34,6 +34,7 @@ export default defineConfig({
       workbox: {
         // Las fotos de productos no se descargan todas al instalar: se guardan al verlas por primera vez
         globPatterns: ['**/*.{js,css,html,svg}', '*.png'],
+        globIgnores: ['docs/**'],          // el manual y las guías (PDF) se descargan al abrirlos
         runtimeCaching: [{
           urlPattern: /\/assets\/.*\.(webp|png|jpe?g)$/i,
           handler: 'CacheFirst',

@@ -27,8 +27,8 @@ R.modulos.taller = {
     return tab === 'envasados' ? vistaEnvasados(d) : tab === 'ordenes' ? vistaOrdenes(d) : tab === 'materiales' ? vistaMateriales(d) : vistaPorEnvasar(d);
   }
 };
-const puedeEnvasar = () => esRol('socio','taller','despacho');
-const puedePedir = () => esRol('socio','administrativo','taller','despacho');
+const puedeEnvasar = () => esRol('socio','taller');
+const puedePedir = () => esRol('socio','administrativo','taller');
 
 function vistaPorEnvasar(d){
   if (!d.porEnvasar.length) return vacio('No hay pedidos pendientes de envasar', 'Aquí aparecen los pedidos en Recibido y En taller, descontando lo que ya está envasado.', puedeEnvasar() ? '<button class="btn btn-p" data-a="tal-envasar">Registrar envasado para stock</button>' : '');
