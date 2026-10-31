@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.12.1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Manual de usuario · Pinturas Liz</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>
+  /* Manual y guías dentro de la app (0.12.0): se leen en el celular y tienen «Volver a la app» siempre a mano */
+  :root{--bg:#F4F6FB;--fg:#0F1E3D;--muted:#4F5E7D;--line:#D3DCEC;--head:#0E3A8C;--acento:#C8202A;--sol:#F6C21A;--surface:#FFFFFF;--tabla:#F4F6FB;color-scheme:light}
+  @media (prefers-color-scheme:dark){:root{--bg:#0A1430;--fg:#EEF2FB;--muted:#A8B5D6;--line:#2A3C70;--head:#8DB6FF;--acento:#FF8A80;--surface:#122148;--tabla:#1B2D5E;color-scheme:dark}}
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.55}
+  .volver-app{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#0E3A8C;color:#fff;
+    padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .volver-app a{color:#fff;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.45);border-radius:999px;padding:7px 14px}
+  .volver-app a.principal{background:#C8202A;border-color:#C8202A}
+  .volver-app span{margin-left:auto;font-size:13px;opacity:.85}
+  main,.contenido{max-width:860px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+  h1{color:var(--head);font-size:1.7rem;border-bottom:4px solid var(--sol);padding-bottom:6px}
+  h2{color:var(--head);font-size:1.3rem;margin-top:2rem;border-bottom:1px solid var(--line);padding-bottom:4px}
+  h3{color:var(--acento);font-size:1.08rem;margin-top:1.4rem}
+  a{color:var(--head)}
+  table{border-collapse:collapse;width:100%;font-size:.9rem;display:block;overflow-x:auto}
+  th{background:#0E3A8C;color:#fff;text-align:left;padding:6px 8px;white-space:nowrap}
+  td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top}
+  tr:nth-child(even) td{background:var(--tabla)}
+  img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;margin:6px 8px 6px 0;vertical-align:top}
+  p:has(> img + img) img{max-width:calc(50% - 10px)}
+  pre,code{font-size:.85rem} pre{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto}
+  hr{border:0;height:4px;background:linear-gradient(90deg,#C8202A 0 20%,#F07A1C 20% 40%,#F6C21A 40% 60%,#2E9D45 60% 80%,#1559C2 80% 100%);margin:22px 0}
+  header#title-block-header{display:none}
+  .guia img{display:block;width:100%;max-width:760px;margin:0 auto;border-radius:10px}
+  /* Anula el estilo por defecto de pandoc (ancho fijo y márgenes) para que la barra ocupe todo el ancho */
+  html body{max-width:none!important;margin:0!important;padding:0 0 48px!important;background:var(--bg)!important;color:var(--fg)!important;font-size:16px!important}
+  body > :not(.volver-app):not(.contenido){max-width:860px;margin-left:auto!important;margin-right:auto!important;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  body > table{padding:0!important;width:calc(100% - 32px);max-width:828px}
+  </style>
+</head>
+<body>
+<div class="volver-app"><a class="principal" href="../">← Volver a la app</a><a href="manual-usuario.pdf" download>Descargar PDF</a><span>Manual de usuario</span></div>
+<header id="title-block-header">
+<h1 class="title">Manual de usuario · Sistema Pinturas Liz</h1>
+<p class="subtitle">Versión 0.16.0 · octubre 2026</p>
+</header>
+<h1 id="manual-de-usuario">Manual de usuario</h1>
+<p><strong>Sistema Pinturas Liz · versión 0.16.0</strong></p>
+<p>Este manual explica qué hace la aplicación, qué puede hacer cada
+perfil y cómo se hace cada tarea. Corresponde a la versión que aparece
+en <em>Mi cuenta</em>. La historia completa de versiones está en
+<code>HISTORIAL_VERSIONES.md</code>.</p>
+<p>Dirección de la aplicación:
+<strong>https://estadisticoj.github.io/pinturas-liz-app/</strong></p>
+<hr />
+<h2 id="novedades-de-las-versiones-0.9.0-a-0.16.0">Novedades de las
+versiones 0.9.0 a 0.16.0</h2>
+<ul>
+<li><p><strong>Hoy renovado (0.16.0):</strong> buscador único (cliente,
+pedido o guía), <strong>¿Qué quieres hacer?</strong> con las tareas de
+tu perfil y cuántas esperan, el pedido a medias y lo urgente en filas
+compactas. En el celular, botón <strong>+</strong>. Sección
+1.5.</p></li>
+<li><p><strong>Entrada más simple (0.16.0):</strong> sin «Crear cuenta»,
+con <strong>¿Olvidaste tu contraseña?</strong> (te llega un correo),
+botón <strong>Ver</strong> para la contraseña y el correo
+recordado.</p></li>
+<li><p><strong>Colores con sentido (0.16.0):</strong> el azul es para la
+acción principal; el rojo, solo para lo urgente o para anular.</p></li>
+<li><p><strong>Hoy (0.15.0):</strong> al entrar ya no aparece <em>Mi
+cuenta</em>: se abre <strong>Hoy</strong>, con tarjetas de lo que tienes
+pendiente y un botón que te lleva a cada tarea. Sección 1.5.</p></li>
+<li><p><strong>Cerrar sesión sin trabarse (0.15.0):</strong> la pantalla
+de entrada aparece al instante y el botón <strong>Entrar</strong> ya no
+queda en gris.</p></li>
+<li><p><strong>Pantalla ajustada en el celular (0.15.0):</strong> al
+cambiar entre Pedidos, Clientes, Cobranzas y los demás módulos, el
+contenido ya no se sale de los bordes ni hay que acomodarlo con los
+dedos.</p></li>
+<li><p><strong>Cobranzas carga para todos (0.14.3):</strong> con
+Administración y socios, Cobranzas no cargaba por la cantidad de pedidos
+del historial; ya está corregido.</p></li>
+<li><p><strong>Cobranzas al instante (0.14.2):</strong> se deja lista
+mientras usas la app, así que al abrirla ya no espera. <em>Por
+cobrar</em>, <em>Cobros</em> y <em>Clientes</em> muestran 50 filas a la
+vez, con <strong>Ver 50 más</strong> al final; los totales y la búsqueda
+siguen contando todo.</p></li>
+<li><p><strong>Más rápida con el historial (0.14.1):</strong> la app
+abre el catálogo sin esperar la lista de pedidos y Cobranzas carga mucho
+más rápido. La lista de pedidos muestra lo esencial; las líneas y el
+seguimiento se cargan al abrir cada pedido (verás «Cargando el pedido…»
+un instante).</p></li>
+<li><p><strong>Ventas y cobranzas reales (0.14.0):</strong> la app tiene
+las guías del Excel desde 2016, con sus pagos. Cada guía es un pedido
+<em>Entregado</em> que dice <strong>Guía 2026-15441</strong>; se busca
+por guía en Pedidos y Cobranzas. Ver la sección 7.2.</p></li>
+<li><p><strong>Precio especial en el pedido (0.14.0):</strong> en un
+producto, <strong>Otro precio en este pedido</strong> permite vender a
+otro precio solo esa vez, con su motivo (volumen, promoción, pago al
+contado…). Si marcas <strong>Que sea su nuevo precio desde hoy</strong>,
+queda como su precio para los próximos pedidos. Socios y Administración
+reciben un aviso. Sección 5.2.</p></li>
+<li><p><strong>«Llevas» en renglones (0.14.0):</strong> los colores
+llenos se ordenan de izquierda a derecha y hacia abajo, con etiquetas
+cortas (<em>Rojo 2d</em>, <em>Azul 6u</em>). Se ven dos renglones;
+<strong>Ver todos</strong> muestra el resto.</p></li>
+<li><p><strong>Mis números más simple y con meta (0.14.0):</strong>
+cuatro números (ventas y cobrado del mes con su <strong>meta</strong>,
+por cobrar y ventas del año), <strong>Qué hacer hoy</strong> (hasta 3
+acciones), el gráfico de 13 meses con <strong>línea de
+tendencia</strong> y la comparación con el <strong>mismo mes del año
+pasado</strong>. Sección 12.1.</p></li>
+<li><p><strong>Pedido escrito o dictado (0.12.0 y 0.13.0):</strong>
+«mate rojo 120 ml 5 doc y brillo blanco 50 ml 2 doc» o «M104 5d»; la app
+arma las líneas, las muestra para revisar y las agrega al carrito. Con
+🎤 <strong>Dictar</strong> se dice en voz alta. Ver la sección
+5.6.</p></li>
+<li><p><strong>Cobro dictado o escrito (0.13.0):</strong> «pedido 245,
+150 soles, Yape» abre el cobro ya lleno para revisar. Sección
+7.</p></li>
+<li><p><strong>«Llevas» (0.12.0):</strong> al llenar colores de un
+producto, abajo se ve todo lo que ya llenaste y esos colores quedan
+resaltados.</p></li>
+<li><p><strong>Manual y guía dentro de la app (0.12.0):</strong> se
+abren en la app y tienen <strong>«← Volver a la app»</strong>
+arriba.</p></li>
+<li><p><strong>Pedido más rápido (0.11.0):</strong> al elegir el cliente
+aparece <strong>Repetir su último pedido</strong>; el catálogo abre en
+<strong>Suele comprar</strong> y cada producto muestra <strong>Lo que
+suele comprar</strong> con su cantidad habitual; los datos del pedido
+(canal, pago, entrega, agencia y fecha) se llenan solos con lo que el
+cliente suele usar. Ver la sección 5.2.</p></li>
+<li><p><strong>Firma del cliente (0.10.0, opcional):</strong> en un
+pedido o en un cobro, el cliente puede firmar con el dedo en el celular,
+con su nombre y DNI. Sirve para respaldar pedidos, entregas y pagos
+grandes. Ver la sección 7.1.</p></li>
+<li><p><strong>Cantidad escrita a mano:</strong> al pedir, escribe
+directamente cuántas docenas o frascos de cada color (por ejemplo, 50
+docenas u 11 unidades). Los botones − y + siguen funcionando. También en
+el carrito.</p></li>
+<li><p><strong>Cobranzas:</strong> buscador por código de pedido
+(P-00012 o 12), recibo (R-00008) o nombre del cliente. Los vencidos
+aparecen primero, el más atrasado arriba.</p></li>
+<li><p><strong>Mis números</strong> (vendedores): ventas y cobranzas del
+mes comparadas con el mes anterior y el año pasado a la misma fecha, a
+quién cobrar y a quién llamar. Socios y Administración lo ven en
+<em>Análisis → Vendedores</em>.</p></li>
+<li><p>En la ficha del cliente, el botón ahora dice <strong>Reportar
+error en precio</strong>.</p></li>
+</ul>
+<hr />
+<h2 id="primeros-pasos">1. Primeros pasos</h2>
+<h3 id="entrar">1.1 Entrar</h3>
+<ol type="1">
+<li>Abre la dirección de la aplicación en el celular o la
+computadora.</li>
+<li>Escribe tu correo y tu contraseña y pulsa <strong>Entrar</strong>.
+El correo queda recordado en ese equipo; con <strong>Ver</strong> puedes
+revisar la contraseña mientras la escribes. Las cuentas las crea un
+socio (<em>Mi cuenta → Administrar usuarios</em>). <strong>¿Olvidaste tu
+contraseña?</strong> Pulsa el enlace, escribe tu correo y pulsa
+<strong>Enviar enlace</strong>. Te llega un correo (revisa también
+<em>Spam</em>); ábrelo en el mismo equipo, escribe la contraseña nueva
+dos veces y entras.</li>
+<li>La primera vez, cambia la contraseña temporal: <strong>Mi cuenta →
+Cambiar contraseña</strong> (mínimo 8 caracteres).</li>
+<li>Siempre empiezas en <strong>Hoy</strong> (ver 1.5).</li>
+<li>Para salir: <strong>Mi cuenta → Cerrar sesión</strong>. La pantalla
+de entrada aparece al instante, aunque el internet esté lento.</li>
+</ol>
+<figure>
+<img loading="lazy" src="img/comun-entrada.png" alt="Pantalla de entrada" />
+<figcaption aria-hidden="true">Pantalla de entrada</figcaption>
+</figure>
+<p><strong>Instalarla como app:</strong> en el celular, abre el menú del
+navegador y elige <em>Agregar a la pantalla de inicio</em>. Se abre como
+cualquier aplicación y <strong>se actualiza sola</strong>.</p>
+<h3 id="partes-de-la-pantalla">1.2 Partes de la pantalla</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Parte</th>
+<th>Qué es</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Barra azul superior</td>
+<td>Logo, módulos (en computadora), <strong>campana</strong>, <strong>Mi
+cuenta</strong> y <strong>carrito</strong></td>
+</tr>
+<tr>
+<td>Franja roja (si aparece)</td>
+<td><strong>Alerta urgente</strong>: un pedido que debes revisar. Pulsa
+<em>Ver pedido</em></td>
+</tr>
+<tr>
+<td>Pestañas</td>
+<td>Vistas del módulo (por ejemplo <em>Catálogo</em>, <em>Pedidos</em>,
+<em>Consolidado</em>)</td>
+</tr>
+<tr>
+<td>Barra inferior (celular)</td>
+<td>Módulos de tu perfil</td>
+</tr>
+<tr>
+<td>Hoja lateral o inferior</td>
+<td>Detalle de un pedido, producto, cliente o formulario</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mi-cuenta">1.3 Mi cuenta</h3>
+<figure>
+<img loading="lazy" src="img/comun-mi-cuenta.png" alt="Mi cuenta" />
+<figcaption aria-hidden="true">Mi cuenta</figcaption>
+</figure>
+<ul>
+<li><strong>Manual de usuario</strong> y <strong>Guía rápida de mi
+perfil</strong>: se abren dentro de la app. Arriba tienen <strong>«←
+Volver a la app»</strong> (regresa sin cerrar tu sesión) y
+<strong>«Descargar PDF»</strong> para guardarlos o imprimirlos.</li>
+<li><strong>Avisar un error de datos</strong>: un dato falta o está mal
+(teléfono, precio, color…). Llega a los socios.</li>
+<li><strong>Sugerir una mejora</strong>: una idea para la app. Llega al
+Desarrollador.</li>
+<li><strong>Cambiar contraseña</strong>. Si la olvidas, en la pantalla
+de entrada pulsa <strong>¿Olvidaste tu contraseña?</strong> (ver
+1.1).</li>
+<li><strong>Administrar usuarios</strong> (solo socios y
+Desarrollador).</li>
+<li><strong>Versión</strong> de la aplicación.</li>
+</ul>
+<h3 id="la-campana">1.4 La campana</h3>
+<p>El número amarillo suma tus <strong>alertas</strong> abiertas y las
+<strong>novedades</strong> que aún no viste.</p>
+<ul>
+<li><strong>Alertas</strong>: datos que faltan o están mal, y pedidos en
+revisión. Cada una tiene comentarios.</li>
+<li><strong>Novedades</strong> (socios, Administración y Desarrollador):
+clientes creados o cambiados, y precios nuevos, cambiados o quitados.
+Son solo informativas: <strong>no hay que aprobar nada</strong>.</li>
+</ul>
+<hr />
+<h3 id="hoy">1.5 Hoy</h3>
+<p>Es la primera pantalla al entrar y el primer botón del menú. De
+arriba hacia abajo:</p>
+<ol type="1">
+<li><strong>Buscador único:</strong> escribe un cliente, un número de
+pedido (<em>245</em> o <em>P-245</em>) o una guía (<em>15441</em>) y ve
+directo, sin elegir antes el módulo. Si no aparece entre lo reciente,
+pulsa <strong>Buscar en todo el historial</strong>.</li>
+<li><strong>Pedido a medias:</strong> si dejaste productos en el
+carrito, aparece <em>«Tienes un pedido sin confirmar para…»</em> con
+<strong>Continuar</strong>.</li>
+<li><strong>¿Qué quieres hacer?:</strong> botones grandes con las tareas
+de tu perfil. El <strong>número rojo</strong> indica cuántas esperan por
+ti (por ejemplo, <em>Confirmar cobros · 4</em>).</li>
+<li><strong>Necesita tu atención:</strong> solo lo urgente, en filas
+compactas; toca la fila para ir a la tarea. Las de <strong>borde
+rojo</strong> son lo más importante. Si no hay nada, dice <em>Todo al
+día</em>.</li>
+<li><strong>Tu mes</strong> (Ventas y socios): ventas y cobranza frente
+a la <strong>meta</strong>; la rayita marca dónde deberías ir a la
+fecha.</li>
+</ol>
+<p>En el celular, el botón flotante <strong>+</strong> hace la acción
+principal de tu perfil desde cualquier pantalla (<em>Nuevo pedido</em>
+para Ventas y socios, <em>Registrar cobro</em> para Administración). Los
+números se actualizan solos.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Perfil</th>
+<th>¿Qué quieres hacer?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Vendedor</td>
+<td>Nuevo pedido · Repetir pedido de un cliente · Registrar cobro · Mis
+pedidos · Mis clientes · Mis números</td>
+</tr>
+<tr>
+<td>Administración</td>
+<td>Revisar pedidos · Confirmar cobros · Registrar cobro · Nuevo pedido
+· Registrar compra · Clientes y precios</td>
+</tr>
+<tr>
+<td>Socio y Desarrollador</td>
+<td>Lo de Administración, más Análisis · Alertas y novedades ·
+Usuarios</td>
+</tr>
+<tr>
+<td>Taller</td>
+<td>Qué envasar · Registrar envasado · Pedir al Laboratorio · Pedidos
+por armar · Por despachar</td>
+</tr>
+<tr>
+<td>Despacho</td>
+<td>Por despachar · Marcar entregado</td>
+</tr>
+<tr>
+<td>Laboratorio</td>
+<td>Órdenes del Taller · Registrar lote · Validar lotes · Insumos</td>
+</tr>
+</tbody>
+</table>
+<h2 id="perfiles">2. Perfiles</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Perfil</th>
+<th>Quién</th>
+<th>Su trabajo en la app</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Desarrollador</strong></td>
+<td>Jordan Roldan</td>
+<td>Todo lo del socio. Además recibe y evalúa las sugerencias de mejora
+y mantiene el sistema</td>
+</tr>
+<tr>
+<td><strong>Socio</strong></td>
+<td>Giovanni Escobedo, Liz Escobedo, Bryan Roldan</td>
+<td>Acceso total. Solo socios y Desarrollador asignan perfiles, agregan
+medidas, fijan límites de crédito y resuelven alertas</td>
+</tr>
+<tr>
+<td><strong>Administrativo</strong></td>
+<td>Angelina Rodas</td>
+<td>Controla pedidos, clientes y precios, confirma el dinero recibido y
+compra insumos y materiales</td>
+</tr>
+<tr>
+<td><strong>Vendedor</strong></td>
+<td>Lily De La Cruz, Jorge Ruiz</td>
+<td>Registra pedidos de sus clientes, crea y edita sus clientes, pone el
+primer precio, entrega y cobra sus pedidos</td>
+</tr>
+<tr>
+<td><strong>Taller</strong></td>
+<td>Encargado Taller</td>
+<td>Envasa, arma pedidos, pide producción al Laboratorio, despacha y
+entrega</td>
+</tr>
+<tr>
+<td><strong>Despacho</strong></td>
+<td>Encargado Despacho</td>
+<td>Despacha y marca entregado</td>
+</tr>
+<tr>
+<td><strong>Laboratorio</strong></td>
+<td>Bryan Roldan (Laboratorio)</td>
+<td>Fabrica lotes, los valida, los entrega al Taller y controla los
+insumos</td>
+</tr>
+</tbody>
+</table>
+<p>Una cuenta nueva queda <strong>sin perfil</strong> hasta que un socio
+o el Desarrollador se lo asigne.</p>
+<h2 id="módulos">3. Módulos</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Para qué sirve</th>
+<th>Lo usan</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hoy</strong></td>
+<td>La primera pantalla: lo que tienes pendiente hoy, con un botón que
+te lleva a cada tarea</td>
+<td>Todos</td>
+</tr>
+<tr>
+<td><strong>Pedidos</strong></td>
+<td>Catálogo, carrito, pedidos con su estado, revisión y
+consolidado</td>
+<td>Socio, Dev., Adm., Vendedor (solo los suyos), Taller, Despacho</td>
+</tr>
+<tr>
+<td><strong>Clientes</strong></td>
+<td>Ficha del cliente y sus precios por docena con historial</td>
+<td>Socio, Dev., Adm., Vendedor</td>
+</tr>
+<tr>
+<td><strong>Cobranzas</strong></td>
+<td>Por cobrar, cobros con recibo, cuadre del dinero y deuda por
+cliente</td>
+<td>Socio, Dev., Adm., Vendedor (solo lo suyo)</td>
+</tr>
+<tr>
+<td><strong>Producción</strong></td>
+<td>Órdenes, lotes, validación y entrega al Taller</td>
+<td>Socio, Dev., Laboratorio</td>
+</tr>
+<tr>
+<td><strong>Taller</strong></td>
+<td>Por envasar, envasados, órdenes al Laboratorio y materiales por
+bolsa</td>
+<td>Socio, Dev., Adm., Taller</td>
+</tr>
+<tr>
+<td><strong>Almacén</strong></td>
+<td>Existencias y movimientos de los 5 almacenes y mínimos</td>
+<td>Cada perfil ve los suyos</td>
+</tr>
+<tr>
+<td><strong>Campana</strong></td>
+<td>Alertas y novedades</td>
+<td>Todos (cada uno ve lo suyo)</td>
+</tr>
+<tr>
+<td><strong>Análisis</strong></td>
+<td>Resumen con métricas y gráficos de pedidos, cobranzas, producción,
+taller y almacén; números de cada vendedor</td>
+<td>Socio, Dev., Adm.</td>
+</tr>
+<tr>
+<td><strong>Mis números</strong></td>
+<td>Ventas y cobranzas del mes del vendedor, comparadas con meses y años
+anteriores</td>
+<td>Vendedor</td>
+</tr>
+<tr>
+<td><strong>Usuarios</strong></td>
+<td>Asignar perfiles y vincular vendedores (en <em>Mi cuenta</em>)</td>
+<td>Socio, Dev.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="qué-puede-hacer-cada-perfil">4. Qué puede hacer cada perfil</h2>
+<p>✔ = puede · — = no puede · <em>Soc./Dev.</em> = Socio y Desarrollador
+(mismos permisos)</p>
+<p><strong>Ver no es modificar.</strong> Por ejemplo, el Taller ve todos
+los pedidos, pero solo puede marcarlos <em>Listo</em>, despacharlos o
+pedir una revisión.</p>
+<h3 id="pedidos">Pedidos</h3>
+<table style="width:99%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Acción</th>
+<th>Soc./Dev.</th>
+<th>Adm.</th>
+<th>Vendedor</th>
+<th>Taller</th>
+<th>Despacho</th>
+<th>Lab.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Registrar pedidos</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Ver pedidos</td>
+<td>todos</td>
+<td>todos</td>
+<td>suyos</td>
+<td>todos</td>
+<td>todos</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Modificar (antes del Taller)</td>
+<td>✔</td>
+<td>✔</td>
+<td>suyos: <em>Recibido</em> o devueltos</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Enviar a revisión</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>en <em>En taller</em> (va a Adm.)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>«Corregido, reenviar»</td>
+<td>✔</td>
+<td>✔</td>
+<td>suyos</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Anular (hasta <em>En taller</em>)</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Enviar al Taller</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Marcar <em>Listo</em></td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Despachar</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Marcar <em>Entregado</em></td>
+<td>✔</td>
+<td>✔</td>
+<td>suyos</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Ver el consolidado</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="clientes-y-precios">Clientes y precios</h3>
+<table>
+<thead>
+<tr>
+<th>Acción</th>
+<th>Soc./Dev.</th>
+<th>Adm.</th>
+<th>Vendedor</th>
+<th>Taller</th>
+<th>Despacho</th>
+<th>Lab.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ver clientes</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>en el pedido</td>
+<td>en el pedido</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Crear cliente</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Editar datos del cliente</td>
+<td>✔</td>
+<td>✔</td>
+<td>sus clientes</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Primer precio de un cliente</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Cambiar, programar o quitar un precio</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Agregar una medida a un producto</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Fijar el límite de crédito</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Recibir novedades de clientes y precios</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cobranzas">Cobranzas</h3>
+<table style="width:99%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Acción</th>
+<th>Soc./Dev.</th>
+<th>Adm.</th>
+<th>Vendedor</th>
+<th>Taller</th>
+<th>Despacho</th>
+<th>Lab.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ver por cobrar y cobros</td>
+<td>todo</td>
+<td>todo</td>
+<td>suyos</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Registrar cobro o adelanto</td>
+<td>✔</td>
+<td>✔</td>
+<td>suyos</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Confirmar dinero recibido o anular un cobro</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Ver deuda por cliente</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Buscar por pedido, recibo o cliente</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Registrar la firma del cliente (pedido, entrega o pago)</td>
+<td>✔</td>
+<td>✔</td>
+<td>sus pedidos</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Borrar una firma hecha por error</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="producción-y-taller">Producción y Taller</h3>
+<table>
+<thead>
+<tr>
+<th>Acción</th>
+<th>Soc./Dev.</th>
+<th>Adm.</th>
+<th>Vendedor</th>
+<th>Taller</th>
+<th>Despacho</th>
+<th>Lab.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pedir producción al Laboratorio</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Registrar, validar y entregar lotes</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Registrar envasados</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Materiales por bolsa</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="almacén">Almacén</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Almacén</th>
+<th>Ven</th>
+<th>Registran compras, salidas y ajustes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Insumos</td>
+<td>Soc./Dev., Adm., Lab.</td>
+<td>Soc./Dev., Adm., Lab.</td>
+</tr>
+<tr>
+<td>Granel Laboratorio</td>
+<td>Soc./Dev., Adm., Lab.</td>
+<td>Soc./Dev., Lab.</td>
+</tr>
+<tr>
+<td>Granel Taller</td>
+<td>Soc./Dev., Adm., Taller</td>
+<td>Soc./Dev., Taller</td>
+</tr>
+<tr>
+<td>Materiales</td>
+<td>Soc./Dev., Adm., Taller</td>
+<td>Soc./Dev., Adm., Taller</td>
+</tr>
+<tr>
+<td>Producto envasado</td>
+<td>Soc./Dev., Adm., Taller, Despacho</td>
+<td>Soc./Dev., Taller</td>
+</tr>
+</tbody>
+</table>
+<h3 id="análisis">Análisis</h3>
+<table style="width:99%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Acción</th>
+<th>Soc./Dev.</th>
+<th>Adm.</th>
+<th>Vendedor</th>
+<th>Taller</th>
+<th>Despacho</th>
+<th>Lab.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ver el módulo Análisis (todas sus pestañas)</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Ver los números de cada vendedor (<em>Análisis →
+Vendedores</em>)</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Ver sus propios números (<em>Mis números</em>)</td>
+<td>—</td>
+<td>—</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="campana-y-cuentas">Campana y cuentas</h3>
+<table>
+<thead>
+<tr>
+<th>Acción</th>
+<th>Soc./Dev.</th>
+<th>Adm.</th>
+<th>Vendedor</th>
+<th>Taller</th>
+<th>Despacho</th>
+<th>Lab.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Avisar un error o sugerir una mejora</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Recibir alerta urgente de revisión</td>
+<td>✔</td>
+<td>✔</td>
+<td>sus pedidos</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Resolver alertas</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Ver novedades</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Asignar perfiles y vincular vendedores</td>
+<td>✔</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Cambiar su propia contraseña</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="pedidos-1">5. Pedidos</h2>
+<h3 id="estados-de-un-pedido">5.1 Estados de un pedido</h3>
+<pre><code>Recibido ──▶ En taller ──▶ Listo ──▶ Despachado ──▶ Entregado
+   │  ▲          │
+   ▼  │          ▼
+ En revisión ◀───┘          (Anulado: desde Recibido, En revisión o En taller)</code></pre>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Estado</th>
+<th>Qué significa</th>
+<th>Quién lo pasa al siguiente</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Recibido</strong></td>
+<td>Registrado; Administración lo revisa</td>
+<td>Soc./Dev. o Adm. → <em>En taller</em></td>
+</tr>
+<tr>
+<td><strong>En revisión</strong></td>
+<td>Hay que corregir algo (tiene un motivo)</td>
+<td>Quien lo registró corrige y reenvía; Soc./Dev. o Adm. pueden
+enviarlo al Taller</td>
+</tr>
+<tr>
+<td><strong>En taller</strong></td>
+<td>Se está envasando y armando</td>
+<td>Soc./Dev., Adm. o Taller → <em>Listo</em></td>
+</tr>
+<tr>
+<td><strong>Listo</strong></td>
+<td>Armado y embolsado (sale del almacén de producto envasado)</td>
+<td>Soc./Dev., Adm., Taller o Despacho → <em>Despachado</em></td>
+</tr>
+<tr>
+<td><strong>Despachado</strong></td>
+<td>Salió hacia el cliente</td>
+<td>Soc./Dev., Adm., Taller, Despacho o el vendedor del pedido →
+<em>Entregado</em></td>
+</tr>
+<tr>
+<td><strong>Entregado</strong></td>
+<td>El cliente lo recibió; se puede cobrar</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Anulado</strong></td>
+<td>Cancelado</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="registrar-un-pedido-vendedor-administración-socio">5.2 Registrar
+un pedido (Vendedor, Administración, Socio)</h3>
+<ol type="1">
+<li><p><strong>Pedidos → Catálogo → Elegir cliente.</strong> Busca por
+nombre, código o zona. <em>Mis clientes</em> muestra los tuyos. <img
+src="img/vend-elegir-cliente.png" alt="Elegir cliente" /> <img
+src="img/vend-catalogo.png" alt="Catálogo" /></p>
+<p><strong>Atajos para pedir más rápido</strong> (si el cliente ya
+compró antes):</p>
+<ul>
+<li><strong>Repetir su último pedido:</strong> copia su último pedido al
+carrito con los precios de hoy. Solo cambia lo que sea distinto y
+confirma. Funciona aunque ese pedido lo haya registrado otra
+persona.</li>
+<li><strong>Suele comprar · N:</strong> el catálogo muestra primero solo
+los productos que el cliente compra (marcados <em>suele comprar</em>).
+<em>Todo</em> muestra el catálogo completo; al buscar, se busca en
+todo.</li>
+<li>Al abrir un producto se elige sola <strong>la medida que más
+pide</strong> y aparece <strong>Lo que suele comprar</strong>: toca un
+color para poner su cantidad habitual o <strong>Llenar con lo
+habitual</strong> para todos. Sus colores salen primero, con la etiqueta
+<em>habitual</em>.</li>
+</ul>
+<p><img loading="lazy" src="img/vend-repetir-ultimo.png"
+alt="Repetir y suele comprar" /> <img loading="lazy" src="img/vend-suele-producto.png"
+alt="Lo que suele comprar" /></p></li>
+<li><p>Abre un producto (<strong>Elegir colores</strong>):</p>
+<ol type="1">
+<li><strong>Medida y precio por docena.</strong> La medida
+<em>habitual</em> se elige sola. Si el cliente no tiene precio,
+escríbelo o pulsa <strong>Usar sugerido</strong> (el precio que más
+clientes pagan).</li>
+<li><strong>¿Docenas o unidades?</strong> Elige cómo vas a contar. Se
+pueden mezclar colores: 6 de Blanco y 6 de Negro.</li>
+<li><strong>Colores:</strong> <strong>escribe la cantidad</strong> en el
+recuadro de cada color o usa − y +.
+<ul>
+<li>En <em>Docenas</em> escribes docenas (50 = 50 docenas = 600 frascos)
+y cada + suma 12 frascos.</li>
+<li>En <em>Unidades</em> escribes frascos (11 = 11 frascos) y cada +
+suma uno.</li>
+<li>Al lado del recuadro se lee <em>doc</em> o <em>u</em>. Si una
+cantidad no es docena exacta, se muestra en frascos (u).</li>
+<li>Abajo, en <strong>Llevas</strong>, ves cada color que ya llenaste
+con su cantidad corta (<em>Rojo 2d</em> = 2 docenas, <em>Azul 6u</em> =
+6 frascos), de izquierda a derecha y hacia abajo. Toca uno para ir a él,
+× para quitarlo. Se ven dos renglones; si hay más, <strong>Ver todos
+(N)</strong>. Esos colores quedan resaltados en la lista. Debajo, el
+total en soles, docenas y frascos. <img loading="lazy" src="img/vend-llevas.png"
+alt="Llevas" /> <img loading="lazy" src="img/vend-producto-medida.png"
+alt="Medida y precio" /> <img loading="lazy" src="img/vend-producto-unidades.png"
+alt="Docenas o unidades" /></li>
+</ul></li>
+<li><strong>Otro precio en este pedido (opcional).</strong> Si esta vez
+vendes a otro precio (por volumen, promoción, pago al contado…), toca
+<strong>Otro precio en este pedido</strong> debajo de las medidas:
+<ul>
+<li>escribe el <strong>precio por docena</strong> (al lado se ve su
+precio de siempre);</li>
+<li>elige o escribe el <strong>motivo</strong> (obligatorio);</li>
+<li><strong>solo este pedido:</strong> su precio de siempre no
+cambia;</li>
+<li>si marcas <strong>Que sea su nuevo precio desde hoy</strong>, el
+nuevo precio queda en su ficha para los próximos pedidos (el anterior
+pasa al historial);</li>
+<li>en ambos casos <strong>Socios y Administración reciben un
+aviso</strong> en la campana (<em>Precio especial</em> o <em>Precio
+cambiado</em>); no hace falta esperar aprobación;</li>
+<li><strong>Quitar precio especial</strong> vuelve a su precio de
+siempre. En el carrito y en el pedido la línea dice <em>precio
+especial</em>, con el motivo y su precio de siempre. <img
+src="img/vend-precio-especial.png" alt="Precio especial" /></li>
+</ul></li>
+</ol></li>
+<li><p><strong>Agregar al carrito.</strong> Repite con otros
+productos.</p></li>
+<li><p><strong>Carrito:</strong> revisa cantidades (también se pueden
+escribir; 0 quita la línea), canal, fecha de entrega,
+<strong>pago</strong> y entrega. Estos datos <strong>se llenan
+solos</strong>: primero con lo que dice la ficha del cliente (pago,
+plazo, agencia) y, si no, con lo que más usa en sus pedidos (canal,
+entrega, agencia y cuántos días después suele recibir). Cámbialos si
+esta vez es distinto.</p>
+<ul>
+<li><strong>Contado:</strong> se cobra al entregar.</li>
+<li><strong>Crédito:</strong> plazo de 7, 15 o 30 días, u <strong>Otra
+fecha</strong>.</li>
+<li><strong>Adelanto:</strong> el cliente paga antes; el adelanto se
+registra cuando el pedido pasa al Taller. <img
+src="img/vend-carrito.png" alt="Carrito" /></li>
+</ul></li>
+<li><p><strong>Confirmar pedido.</strong> Queda <em>Recibido</em> con su
+número (P-00001…).</p></li>
+<li><p><strong>Firma del cliente (opcional):</strong> en el pedido,
+<em>Firma del cliente</em>. En pedidos de S/ 1,000 o más la app la
+recomienda. Ver la sección 7.1.</p></li>
+</ol>
+<p><strong>Precio por unidad:</strong> el precio es por docena; un
+frasco cuesta la docena ÷ 12. Ejemplo: Mate 120 ml a S/ 30 la docena → 6
+unidades = S/ 15.</p>
+<p><strong>Empaque:</strong> el pedido muestra cómo lo arma el Taller.
+Los colores de un mismo producto y medida se juntan en bolsas de
+<strong>12</strong> (hasta 120 ml) o de <strong>6</strong> (250 ml), y
+lo que sobra va en una bolsa aparte.</p>
+<h3 id="modificar-un-pedido">5.3 Modificar un pedido</h3>
+<ul>
+<li><strong>Quién y cuándo:</strong>
+<ul>
+<li>Socio, Desarrollador y Administración, mientras esté
+<em>Recibido</em> o <em>En revisión</em>.</li>
+<li>Quien lo registró, mientras esté <em>Recibido</em> o cuando se lo
+devuelvan a revisión.</li>
+</ul></li>
+<li><strong>Cómo:</strong> abre el pedido → <strong>Modificar</strong>.
+El carrito muestra el pedido y puedes cambiar cantidades, agregar
+productos desde el catálogo o cambiar los datos. <strong>Guardar
+cambios</strong>.</li>
+<li>Las líneas que quedan <strong>conservan su precio</strong>. Cada
+cambio queda en el <em>Seguimiento</em>.</li>
+</ul>
+<h3 id="revisión">5.4 Revisión</h3>
+<p><img loading="lazy" src="img/vend-alerta-urgente.png" alt="Alerta urgente" /> <img
+src="img/vend-pedido-revision.png" alt="Pedido en revisión" /></p>
+<ul>
+<li><strong>Socio, Desarrollador o Administración:</strong> abren el
+pedido → <strong>Enviar a revisión</strong> → escriben el motivo.</li>
+<li><strong>Taller:</strong> en un pedido <em>En taller</em> →
+<strong>Enviar a revisión</strong>. Lo ve primero Administración, que
+puede corregirlo, devolverlo a quien lo registró o enviarlo de nuevo al
+Taller.</li>
+<li><strong>Quien debe corregir:</strong>
+<ol type="1">
+<li>Ve la <strong>franja roja</strong> arriba de la pantalla.</li>
+<li>Pulsa <em>Ver pedido</em> → <strong>Modificar</strong> →
+<strong>Guardar cambios</strong>.</li>
+<li>Pulsa <strong>Corregido, reenviar</strong>.</li>
+</ol></li>
+<li>Los pedidos en revisión <strong>no se suman</strong> al consolidado
+del Taller.</li>
+</ul>
+<h3 id="repetir-y-anular">5.5 Repetir y anular</h3>
+<ul>
+<li><strong>Repetir:</strong> copia los productos de un pedido al
+carrito, con los precios actuales del cliente.</li>
+<li><strong>Anular:</strong> Socio, Desarrollador o Administración,
+hasta <em>En taller</em>. Pide confirmación.</li>
+</ul>
+<h3 id="pedido-escrito-o-dictado">5.6 Pedido escrito o dictado</h3>
+<p>En el catálogo, con el cliente elegido: <strong>🎤 Dictar o escribir
+pedido</strong>.</p>
+<figure>
+<img loading="lazy" src="img/vend-pedido-texto.png" alt="Pedido escrito" />
+<figcaption aria-hidden="true">Pedido escrito</figcaption>
+</figure>
+<ol type="1">
+<li><strong>Escribe</strong> (o pega lo que el cliente mandó por
+WhatsApp) o pulsa <strong>🎤 Dictar</strong> y habla:
+<ul>
+<li><em>«mate rojo 120 ml 5 doc y brillo blanco 50 ml 2 doc»</em></li>
+<li><em>«mate 120: rojo 5 docenas, blanco 2 docenas, amarillo media
+docena»</em> (lo que no repites se arrastra)</li>
+<li><em>«M104 5d, M148 11u»</em> (con códigos de color)</li>
+</ul></li>
+<li>Abajo, en <strong>Revisa antes de agregar</strong>, cada renglón
+sale con ✔ (producto, medida, color, cantidad y precio) o con ✖ y lo que
+falta. Corrige el texto si hace falta: se vuelve a leer mientras
+escribes.</li>
+<li><strong>Agregar al carrito.</strong> Lo que quedó con ✖ se queda en
+el recuadro para corregirlo.</li>
+</ol>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Se escribe o se dice</th>
+<th>Se entiende</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>doc, docenas, d («5d»)</td>
+<td>docenas</td>
+</tr>
+<tr>
+<td>u, unidades, frascos («11u»)</td>
+<td>frascos</td>
+</tr>
+<tr>
+<td>media docena · docena y media</td>
+<td>6 · 18 frascos</td>
+</tr>
+<tr>
+<td>120 ml · 250 · un litro · un galón</td>
+<td>medida (si no la dices: la del renglón anterior o la que el cliente
+suele pedir)</td>
+</tr>
+<tr>
+<td>un número solo («rojo 5»)</td>
+<td>docenas o unidades, según el botón <em>Números = docenas /
+unidades</em></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>El dictado usa el reconocimiento de voz del navegador (Chrome en
+Android, Safari en iPhone): es gratis y necesita internet. Si no aparece
+🎤, usa el micrófono del teclado.</li>
+<li>Siempre se revisa antes de agregar: el texto o la voz no confirman
+nada solos.</li>
+</ul>
+<hr />
+<h2 id="clientes-y-precios-1">6. Clientes y precios</h2>
+<figure>
+<img loading="lazy" src="img/adm-ficha-cliente.png" alt="Ficha del cliente" />
+<figcaption aria-hidden="true">Ficha del cliente</figcaption>
+</figure>
+<ul>
+<li><strong>Ficha del cliente:</strong> sus precios por docena, precios
+programados, historial y datos (teléfono, documento, dirección, agencia,
+pago habitual).
+<ul>
+<li>El vendedor edita los datos de <strong>sus</strong> clientes.</li>
+<li>Socios, Desarrollador y Administración, los de todos.</li>
+</ul></li>
+<li><strong>Crear cliente:</strong> desde <em>Elegir cliente → Cliente
+nuevo</em> o desde Clientes. Recibe código (C0001…) y queda a nombre del
+vendedor que lo creó.</li>
+<li><strong>Precios:</strong>
+<ul>
+<li>Siempre <strong>por docena</strong> y <strong>de cada
+cliente</strong>; no hay lista general.</li>
+<li><strong>Primer precio:</strong> se escribe en el pedido o con
+<em>Agregar precio</em> (Socio, Dev., Adm. y Vendedor).</li>
+<li><strong>Cambiar un precio:</strong> se elige desde qué fecha rige, y
+el anterior queda en el historial (Socio, Dev. y Adm.). Se puede
+programar un alza.</li>
+<li><strong>Quitar un precio:</strong> desde mañana ese producto se pide
+a mano.</li>
+<li><strong>Medida nueva</strong> (por ejemplo, la primera de un
+producto sin precio): solo Socio o Desarrollador.</li>
+<li><strong>Reportar error en precio:</strong> botón de la ficha.
+Escribe el producto, la medida y el precio correcto; llega a los socios
+como alerta.</li>
+<li><strong>Precio especial:</strong> al pedir se puede vender a otro
+precio solo en ese pedido, con motivo; o dejarlo como su nuevo precio
+desde hoy (sección 5.2, paso 4). Socios y Administración reciben el
+aviso.</li>
+<li>Los pedidos ya registrados <strong>no cambian</strong> si después
+cambia el precio.</li>
+</ul></li>
+<li><strong>Novedades:</strong> cada cliente nuevo, cada cambio de datos
+y cada precio nuevo, cambiado o quitado llega a Socio, Desarrollador y
+Administración, con quién lo hizo y el valor anterior.</li>
+</ul>
+<h2 id="cobranzas-1">7. Cobranzas</h2>
+<p><img loading="lazy" src="img/vend-cobros.png" alt="Cobros" /> <img
+src="img/adm-cobros-cuadre.png" alt="Cuadre" /></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Forma de pago</th>
+<th>Cuándo se registra el cobro</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Contado (contra entrega)</td>
+<td>Cuando el pedido está <strong>Entregado</strong>. El vendedor puede
+marcar <em>Entregado</em> sus pedidos y luego cobrar</td>
+</tr>
+<tr>
+<td>Crédito</td>
+<td>Cuando está <strong>Entregado</strong>; vence según el plazo o la
+fecha elegida</td>
+</tr>
+<tr>
+<td>Adelanto</td>
+<td>Desde que el pedido pasa al <strong>Taller</strong></td>
+</tr>
+</tbody>
+</table>
+<ol start="0" type="1">
+<li><strong>Cobro dictado o escrito:</strong> en <em>Por cobrar</em>,
+<strong>🎤 Dictar o escribir cobro</strong> y di o escribe <em>«pedido
+245, 150 soles, Yape»</em> o <em>«Ana Torres 80 soles en efectivo»</em>.
+La app muestra el pedido, el saldo, el monto y el medio; si hay varios
+pedidos del cliente, eliges uno. <strong>Revisar y registrar</strong>
+abre el cobro ya lleno para confirmarlo. <img
+src="img/adm-cobro-texto.png" alt="Cobro escrito" /></li>
+<li><strong>Buscar:</strong> arriba, por código de pedido (P-00012, p12
+o 12), recibo (R-00008) o nombre del cliente. En <em>Por cobrar</em> los
+<strong>vencidos van primero</strong>, el más atrasado arriba; luego los
+que vencen antes. Se muestran 50 a la vez: al final, <strong>Ver 50
+más</strong> muestra los siguientes. Los totales de arriba y la búsqueda
+cuentan todos. <img loading="lazy" src="img/adm-cobranzas-buscar.png"
+alt="Buscar en Cobranzas" /></li>
+<li><strong>Registrar cobro:</strong> desde <em>Por cobrar</em> o desde
+el pedido. Monto, medio (efectivo, Yape, Plin, transferencia, depósito)
+y fecha. Se genera un recibo (R-00001…). Si marcas <strong>«Pedir la
+firma del cliente al guardar»</strong>, al registrar el cobro se abre el
+recuadro para que el cliente firme (constancia de pago). Desde S/ 1,000
+viene marcado. <img loading="lazy" src="img/adm-cobro-firma.png"
+alt="Cobro con firma" /></li>
+<li><strong>Cuadre:</strong> el cobro queda <em>Por entregar</em> hasta
+que Administración confirma que recibió el dinero (<strong>Confirmar
+recibido</strong>). Arriba se ve cuánto debe entregar cada persona.</li>
+<li><strong>Clientes:</strong> deuda, deuda vencida y límite de crédito
+(lo fija un socio).</li>
+</ol>
+<h3 id="firma-del-cliente-opcional">7.1 Firma del cliente
+(opcional)</h3>
+<p>Sirve para respaldar <strong>pedidos, entregas o cobros
+grandes</strong>: el cliente firma con el dedo en el celular y la firma
+queda guardada con el pedido, con su nombre, su DNI (opcional), la fecha
+y quién la registró.</p>
+<p><img loading="lazy" src="img/vend-firma.png" alt="Firmar" /> <img
+src="img/vend-firma-guardada.png" alt="Firma guardada" /></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Dónde</th>
+<th>Qué respalda</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pedido <em>Recibido</em>, <em>En revisión</em>, <em>En taller</em> o
+<em>Listo</em> → <strong>Firma del cliente: conformidad del
+pedido</strong></td>
+<td>El cliente aceptó el pedido (productos, cantidades y precio)</td>
+</tr>
+<tr>
+<td>Pedido <em>Despachado</em> o <em>Entregado</em> → <strong>Firma del
+cliente: recibí la mercadería conforme</strong></td>
+<td>El cliente recibió la mercadería</td>
+</tr>
+<tr>
+<td>Al registrar un cobro (casilla) o en la lista de cobros →
+<strong>Firma de pago</strong></td>
+<td>El cliente pagó ese monto (recibo R-…)</td>
+</tr>
+</tbody>
+</table>
+<ol type="1">
+<li>Pulsa el botón de firma. Pide al cliente que firme dentro del
+recuadro. <em>Borrar y volver a firmar</em> si sale mal.</li>
+<li>Revisa el nombre de quien firma (viene el del cliente) y, si
+quieres, escribe su DNI.</li>
+<li><strong>Guardar firma.</strong> En la lista aparece <strong>✍
+Firmado</strong>.</li>
+</ol>
+<ul>
+<li>Es <strong>opcional</strong>: nada se bloquea si no hay firma. En
+pedidos o cobros de <strong>S/ 1,000 o más</strong> la app la
+recomienda.</li>
+<li>La firma <strong>no se puede cambiar</strong>. Solo un socio o el
+Desarrollador puede borrar una firma hecha por error.</li>
+<li>La pueden registrar Socio, Desarrollador, Administración, Vendedor,
+Taller y Despacho, en los pedidos que ven.</li>
+</ul>
+<h3 id="guías-del-excel-datos-importados">7.2 Guías del Excel (datos
+importados)</h3>
+<p>Mientras la app no se use para todo, las ventas y pagos del Excel
+<em>Datos Pinturas Liz</em> se cargan en la app.</p>
+<ul>
+<li>Cada <strong>guía</strong> es un pedido <strong>Entregado</strong>
+con su número de pedido (P-…) y la etiqueta <strong>Guía
+2026-15441</strong>. Su total es el monto de la guía.</li>
+<li>Se considera <strong>a crédito de 30 días</strong>: si tiene deuda,
+se ve vencida 30 días después de la fecha de la guía.</li>
+<li>Cada <strong>pago</strong> del Excel es un cobro ya recibido por
+Administración, con su recibo (R-…).</li>
+<li>Busca por guía en <strong>Pedidos</strong> o
+<strong>Cobranzas</strong> (2026-15441, g15441 o solo 15441). Al dictar
+un cobro: «guía 15441, 150 soles».</li>
+<li>Las líneas usan el precio de cada cliente. Si no cuadran con el
+monto de la guía, se ajustan y el pedido dice en <em>Notas</em> «precios
+ajustados para cuadrar con el monto de la guía».</li>
+<li><strong>Importante:</strong> mientras se cargue desde el Excel, no
+registres la misma venta también en la app, porque quedaría dos
+veces.</li>
+</ul>
+<h2 id="producción-laboratorio">8. Producción (Laboratorio)</h2>
+<ol type="1">
+<li><strong>Órdenes:</strong> el Taller o Administración piden
+producción (color y litros). El Laboratorio las ve en
+<em>Órdenes</em>.</li>
+<li><strong>Registrar lote:</strong> color, litros e insumos usados
+(salen del almacén de Insumos).</li>
+<li><strong>Validar:</strong> viscosidad, transparencia y color. Si se
+aprueba, el lote entra a <strong>Granel Laboratorio</strong>.</li>
+<li><strong>Entregar al Taller:</strong> pasa a <strong>Granel
+Taller</strong> y la orden queda atendida.</li>
+</ol>
+<p><img loading="lazy" src="img/lab-ordenes.png" alt="Órdenes" /> <img
+src="img/lab-lotes.png" alt="Lotes" /></p>
+<h2 id="taller">9. Taller</h2>
+<p><img loading="lazy" src="img/taller-por-envasar.png" alt="Por envasar" /> <img
+src="img/taller-envasados.png" alt="Envasados" /></p>
+<ul>
+<li><strong>Por envasar:</strong> lo que piden los pedidos
+(<em>Recibido</em> y <em>En taller</em>) frente a lo ya envasado. Indica
+cuántas <strong>bolsas</strong> llenar y cuánto granel hace falta.</li>
+<li><strong>Registrar envasado</strong> (Taller): color, medida y bolsas
+llenas. Descuenta granel y materiales, y suma frascos al producto
+envasado.</li>
+<li><strong>Pedidos al Laboratorio:</strong> nueva orden de producción
+cuando falta granel.</li>
+<li><strong>Materiales por bolsa:</strong> cuántos frascos, tapas,
+etiquetas y bolsas consume cada bolsa envasada.</li>
+<li><strong>En Pedidos:</strong>
+<ul>
+<li><strong>Marcar listo</strong> (descuenta el producto envasado);</li>
+<li><strong>Despachar</strong> y <strong>Marcar entregado</strong>;</li>
+<li><strong>Enviar a revisión</strong> si hay un problema.</li>
+</ul></li>
+</ul>
+<h2 id="despacho">10. Despacho</h2>
+<p><img loading="lazy" src="img/despacho-pedidos.png" alt="Pedidos listos" /> <img
+src="img/despacho-pedido.png" alt="Despachar" /></p>
+<ol type="1">
+<li><strong>Pedidos</strong> se abre en los pedidos
+<strong>Listos</strong>.</li>
+<li>Abre el pedido: ve el cliente, la entrega o agencia, y el empaque →
+<strong>Despachar</strong>.</li>
+<li>Al entregarlo → <strong>Marcar entregado</strong>.</li>
+</ol>
+<h2 id="almacén-1">11. Almacén</h2>
+<p>Cinco almacenes:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Almacén</th>
+<th>Unidad</th>
+<th>Se mueve solo cuando…</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Insumos</td>
+<td>kg, L…</td>
+<td>el Laboratorio registra un lote (salida)</td>
+</tr>
+<tr>
+<td>Granel Laboratorio</td>
+<td>L</td>
+<td>se aprueba un lote (entrada) o se entrega al Taller (salida)</td>
+</tr>
+<tr>
+<td>Granel Taller</td>
+<td>L</td>
+<td>el Laboratorio entrega (entrada) o el Taller envasa (salida)</td>
+</tr>
+<tr>
+<td>Materiales</td>
+<td>und…</td>
+<td>el Taller envasa (salida según materiales por bolsa)</td>
+</tr>
+<tr>
+<td>Producto envasado</td>
+<td>frascos</td>
+<td>el Taller envasa (entrada) o un pedido queda <em>Listo</em>
+(salida)</td>
+</tr>
+</tbody>
+</table>
+<p>A mano se registran <strong>compras</strong>,
+<strong>salidas</strong> (merma) y <strong>ajustes por conteo</strong>.
+Los movimientos no se borran. Con un <strong>mínimo</strong>, el almacén
+avisa cuando la existencia baja de ese número.</p>
+<h2 id="análisis-socio-desarrollador-y-administración">12. Análisis
+(Socio, Desarrollador y Administración)</h2>
+<figure>
+<img loading="lazy" src="img/an-resumen.png" alt="Resumen del Análisis" />
+<figcaption aria-hidden="true">Resumen del Análisis</figcaption>
+</figure>
+<p>Muestra cómo va la empresa con números y gráficos. Solo se consulta:
+aquí no se cambia nada.</p>
+<p><strong>Arriba eliges el período:</strong> <em>Este mes</em>,
+<em>Últimos 30 días</em>, <em>Últimos 90 días</em>, <em>Este año</em> o
+<em>Todo</em>. Las ventas, cobros, producción y envasado son <strong>del
+período</strong>. Los saldos, lo vencido, lo pendiente y las existencias
+son siempre <strong>de hoy</strong>.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Pestaña</th>
+<th>Qué muestra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Resumen</strong></td>
+<td>Ventas, cobrado, por cobrar (y vencido), producción aprobada,
+envasado y artículos bajo mínimo. Ventas por mes y pedidos por
+estado</td>
+</tr>
+<tr>
+<td><strong>Pedidos</strong></td>
+<td>Pedidos, ventas, ticket promedio y frascos vendidos. Ventas y
+pedidos por mes, por estado, por vendedor y por canal. Productos más
+vendidos y mejores clientes</td>
+</tr>
+<tr>
+<td><strong>Cobranzas</strong></td>
+<td>Cobrado en el período, por cobrar, vencido, pedidos en curso y
+dinero por entregar a Administración. Cobrado por mes, por medio de pago
+y por persona. <strong>Deuda por cliente</strong> con lo vencido y su
+límite</td>
+</tr>
+<tr>
+<td><strong>Producción y Taller</strong></td>
+<td>Litros aprobados, lotes, órdenes pendientes, bolsas envasadas y lo
+que falta envasar. Litros y bolsas por mes, colores más producidos y
+productos más envasados</td>
+</tr>
+<tr>
+<td><strong>Almacén</strong></td>
+<td>Artículos con existencia, bajo mínimo y en negativo por almacén;
+lista de lo que hay que <strong>reponer</strong>; granel disponible</td>
+</tr>
+</tbody>
+</table>
+<p><img loading="lazy" src="img/an-movil.png" alt="Análisis en el celular" /> <img
+src="img/an-movil-grafico.png" alt="Detalle de un gráfico" /></p>
+<ul>
+<li><strong>Detalle de un gráfico:</strong> toca una barra (o pasa el
+mouse) para ver el mes y el monto exacto.</li>
+<li>Un recuadro con <strong>borde rojo</strong> pide atención: hay deuda
+vencida o artículos bajo el mínimo.</li>
+<li><em>Pedidos</em> no cuenta los anulados (se muestran aparte).
+<em>Por cobrar</em> suma los pedidos entregados y los adelantos;
+<em>Pedidos en curso</em> es lo que se cobrará al entregar.</li>
+</ul>
+<figure>
+<img loading="lazy" src="img/an-cobranzas.png" alt="Cobranzas en Análisis" />
+<figcaption aria-hidden="true">Cobranzas en Análisis</figcaption>
+</figure>
+<h3 id="mis-números-vendedor-y-análisis-vendedores">12.1 Mis números
+(Vendedor) y Análisis → Vendedores</h3>
+<p>El vendedor tiene el módulo <strong>Mis números</strong>. Socios,
+Desarrollador y Administración ven lo mismo de cada vendedor en
+<strong>Análisis → Vendedores</strong> (o de toda la empresa).</p>
+<p><img loading="lazy" src="img/vend-mis-numeros.png" alt="Mis números" /> <img
+src="img/vend-mis-numeros-grafico.png"
+alt="Gráfico y comparación" /></p>
+<p><strong>Cuatro números:</strong></p>
+<ul>
+<li><strong>Ventas del mes</strong> con su <strong>meta</strong>: la
+barra muestra cuánto llevas; la <strong>rayita</strong> marca dónde
+deberías ir hoy (si hoy es 25 de un mes de 31 días, el 81% de la meta).
+Barra verde = vas al ritmo o mejor. Debajo, ▲▼ frente al <strong>mismo
+mes del año pasado a la misma fecha</strong> y <strong>cuánto cerrarías
+el mes</strong> si sigues al ritmo de hoy.</li>
+<li><strong>Cobrado del mes</strong> con su meta, qué parte de lo
+vendido este mes ya se cobró y ▲▼ frente al año pasado.</li>
+<li><strong>Por cobrar hoy</strong>, con lo <strong>vencido</strong> en
+rojo.</li>
+<li><strong>Ventas del año</strong>, con ▲▼ frente al mismo tramo del
+año pasado (si hay datos).</li>
+</ul>
+<p><strong>La meta del mes</strong> = lo vendido (o cobrado) en el
+<strong>mismo mes del año pasado + 30%</strong>. Si ese mes no tiene
+ventas en la app, se usa el promedio de los 3 meses anteriores + 30%.
+Socios y Administración cambian el porcentaje en <em>Análisis →
+Vendedores</em> (vale para todos los vendedores).</p>
+<p><strong>Qué hacer hoy:</strong> hasta 3 acciones, la más urgente
+primero: cobrar lo vencido (y a quién empezar), cuánto falta por día
+para la meta, a quién llamar, cuánto entregar a Administración.</p>
+<p><strong>Ventas y cobrado por mes (13 meses)</strong> con la
+<strong>línea de tendencia</strong> de las ventas (punteada): se calcula
+con los meses completos desde el primer mes con ventas y dice cuánto
+sube o baja por mes.</p>
+<p><strong>Este mes vs el mismo mes del año pasado</strong>, los mismos
+días: ventas, cobrado, pedidos y clientes.</p>
+<p><strong>A quién cobrar</strong> (deuda, vencido y días de atraso) y
+<strong>A quién llamar</strong> (clientes que compraban seguido y llevan
+de 31 a 120 días sin comprar): se ven 5; <strong>Ver todos</strong>
+muestra el resto.</p>
+<p><strong>Ventas del vendedor</strong> = pedidos (no anulados) de sus
+clientes o registrados por él.</p>
+<p>En <strong>Análisis → Vendedores</strong> se ve además, abajo, una
+línea con pedidos, clientes, ticket promedio, clientes activos (30 días)
+y días promedio para cobrar.</p>
+<figure>
+<img loading="lazy" src="img/an-vendedores.png" alt="Análisis → Vendedores" />
+<figcaption aria-hidden="true">Análisis → Vendedores</figcaption>
+</figure>
+<h2 id="usuarios-socio-y-desarrollador">13. Usuarios (Socio y
+Desarrollador)</h2>
+<figure>
+<img loading="lazy" src="img/socio-usuarios.png" alt="Usuarios" />
+<figcaption aria-hidden="true">Usuarios</figcaption>
+</figure>
+<p><strong>Mi cuenta → Administrar usuarios:</strong></p>
+<ul>
+<li>asignar el perfil;</li>
+<li>vincular al vendedor con su nombre de la lista de clientes («Vende
+como»);</li>
+<li>activar o desactivar la cuenta.</li>
+</ul>
+<p>Nadie puede quitarse su propio perfil de socio o desarrollador.</p>
+<hr />
+<h2 id="preguntas-frecuentes">14. Preguntas frecuentes</h2>
+<p><strong>No veo un botón que otro compañero sí ve.</strong> Cada
+perfil ve solo lo que puede hacer (sección 4).</p>
+<p><strong>Dice «Tu perfil no tiene permiso».</strong> La acción no
+corresponde a tu perfil. Si crees que es un error, usa <em>Avisar un
+error</em>.</p>
+<p><strong>No puedo registrar el cobro.</strong> Contado y crédito se
+cobran cuando el pedido está <strong>Entregado</strong>; el adelanto,
+desde que pasa al Taller.</p>
+<p><strong>El producto dice «Sin precio».</strong> El cliente aún no
+tiene precio para esa medida: escríbelo o usa el sugerido.</p>
+<p><strong>Un producto no aparece en el catálogo.</strong> No tiene
+medidas; un socio debe agregarlas.</p>
+<p><strong>¿Cómo vuelvo del manual a la app?</strong> Con el botón rojo
+<strong>«← Volver a la app»</strong> de arriba. Si en vez del manual se
+abre la app, tienes una versión anterior: ciérrala por completo y vuelve
+a abrirla.</p>
+<p><strong>El micrófono no funciona.</strong> Acepta el permiso de
+micrófono cuando la app lo pida (o actívalo en el candado de la barra de
+direcciones o en los ajustes del navegador). El dictado necesita
+internet. Si tu celular no muestra 🎤 Dictar, usa el micrófono del
+teclado dentro del recuadro de texto: funciona igual.</p>
+<p><strong>El texto no reconoció un renglón.</strong> Sale en rojo con
+el motivo (falta el color, la medida o la cantidad). Corrígelo en el
+recuadro: se vuelve a leer mientras escribes.</p>
+<p><strong>Veo pedidos con «Guía …».</strong> Son las ventas del Excel
+cargadas en la app (sección 7.2).</p>
+<p><strong>¿Qué pasa si pongo un precio especial?</strong> Solo ese
+pedido usa ese precio; su precio de siempre no cambia, salvo que marques
+<em>Que sea su nuevo precio desde hoy</em>. Socios y Administración
+reciben el aviso con el motivo.</p>
+<p><strong>¿Por qué la meta usa «promedio de 3 meses»?</strong> Porque
+ese vendedor no tiene ventas en ese mismo mes del año pasado. Con las
+guías del Excel cargadas, la mayoría ya tiene la meta del mes del año
+pasado + 30%.</p>
+<p><strong>No veo el módulo Análisis.</strong> Solo lo ven socios,
+Desarrollador y Administración. El vendedor tiene <em>Mis
+números</em>.</p>
+<p><strong>No aparece «Repetir su último pedido».</strong> El cliente
+aún no tiene pedidos, o (vendedor) no es tu cliente ni lo registraste
+tú.</p>
+<p><strong>¿La firma es obligatoria?</strong> No. Es opcional; la app
+solo la recomienda desde S/ 1,000.</p>
+<p><strong>Mis números dice que mi usuario no está vinculado.</strong>
+Un socio debe elegir tu nombre en <em>Usuarios → Vende como</em>.</p>
+<p><strong>¿Cómo pido 11 frascos o 50 docenas?</strong> Escribe el
+número en el recuadro del color, en lugar de pulsar + muchas veces.</p>
+<p><strong>La app no muestra lo último.</strong> Cierra y vuelve a abrir
+la app; se actualiza sola. La versión está en <em>Mi cuenta</em>.</p>
+<p><strong>Olvidé mi contraseña.</strong> Pide a un socio o al
+Desarrollador que te pongan una nueva y cámbiala al entrar.</p>
+<h2 id="glosario">15. Glosario</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Docena / unidad</td>
+<td>12 frascos / 1 frasco. El precio siempre es por docena</td>
+</tr>
+<tr>
+<td>Bolsa</td>
+<td>Paquete del Taller: 12 frascos (hasta 120 ml) o 6 (250 ml)</td>
+</tr>
+<tr>
+<td>Precio sugerido</td>
+<td>El precio por docena que más clientes pagan hoy por ese producto y
+medida</td>
+</tr>
+<tr>
+<td>Medida habitual</td>
+<td>La medida de un producto que más clientes compran</td>
+</tr>
+<tr>
+<td>Granel</td>
+<td>Pintura fabricada, aún sin envasar (en litros)</td>
+</tr>
+<tr>
+<td>Lote</td>
+<td>Una producción del Laboratorio (L-00001…)</td>
+</tr>
+<tr>
+<td>Orden</td>
+<td>Pedido de producción del Taller al Laboratorio (O-00001…)</td>
+</tr>
+<tr>
+<td>Envasado</td>
+<td>Registro de bolsas llenadas por el Taller (E-00001…)</td>
+</tr>
+<tr>
+<td>Recibo</td>
+<td>Comprobante interno de un cobro (R-00001…)</td>
+</tr>
+<tr>
+<td>Firma del cliente</td>
+<td>Firma hecha con el dedo en el celular que respalda un pedido, una
+entrega o un pago</td>
+</tr>
+<tr>
+<td>Novedad</td>
+<td>Aviso informativo de clientes o precios nuevos o cambiados</td>
+</tr>
+<tr>
+<td>Alerta</td>
+<td>Dato faltante, error o pedido en revisión, con comentarios</td>
+</tr>
+<tr>
+<td>Ticket promedio</td>
+<td>Ventas del período ÷ número de pedidos</td>
+</tr>
+<tr>
+<td>Vencido</td>
+<td>Saldo de un pedido cuya fecha de pago ya pasó</td>
+</tr>
+<tr>
+<td>Datos de demostración</td>
+<td>Pedidos, cobros y producción de ejemplo marcados [DEMO]; se borran
+antes de usar la app de verdad</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
